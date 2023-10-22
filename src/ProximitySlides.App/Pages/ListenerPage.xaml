@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="ProximitySlides.App.Pages.ListenerPage"
+             xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
+             x:DataType="viewModels:ListenerViewModel">
+    
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            EventName="Appearing"
+            Command="{Binding AppearingCommand}"/>
+        
+        <toolkit:EventToCommandBehavior
+            EventName="Disappearing"
+            Command="{Binding DisappearingCommand}"/>
+    </ContentPage.Behaviors>
+    
+    <Grid RowDefinitions="50, Auto"
+          ColumnDefinitions=".75*, .25*"
+          Padding="10">
+        
+        <Label Grid.Row="0"
+               Grid.Column="0"
+               Grid.ColumnSpan="2"
+               FontSize="24"
+               Text="Speakers nearby:"/>
+
+        <CollectionView x:Name="MyCollectionView"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        ItemsSource="{Binding Speakers}"
+                        SelectionMode="Single"
+                        SelectionChangedCommand="{Binding SelectedTagChangedCommand}"
+                        SelectionChangedCommandParameter="{Binding SelectedItem, Source={x:Reference MyCollectionView}}">
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup Name="CommonStates">
+                                <VisualState Name="Normal"></VisualState>
+                                <VisualState Name="Selected">
+                                    <VisualState.Setters>
+                                        <Setter Property="BackgroundColor" Value="Black"></Setter>
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+
+                        <Border Padding="16"
+                                Stroke="Gray">
+
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="4" />
+                            </Border.StrokeShape>
+
+
+                            <Label Text="{Binding .}" FontSize="20"/>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+            
+        </CollectionView>
+        
+    </Grid>
+    
+</ContentPage>
