@@ -4,6 +4,7 @@ using Android.Bluetooth.LE;
 using Android.OS;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Models;
+using ProximitySlides.Core.Managers.Scanners;
 
 namespace ProximitySlides.App.Managers.Listeners;
 
@@ -14,12 +15,12 @@ public class BleListener : IProximityListener
 
     private bool _isSpeakerIdFilterEnabled;
     private string? _listenId;
-    private SenderIdentifier? _speakerId;
+    private SpeakerIdentifier? _speakerId;
 
     private const int SpeakerIdLength = 2;
     private const string BaseUuid = "0000{0}-0000-1000-8000-00805F9B34FB";
     
-    private Action<BlePackageModel>? _onListenResultHandler;
+    private Action<BlePackageMessage>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
 
     public BleListener(ILogger<BleListener> logger, IBleScanner bleScanner)
@@ -28,7 +29,7 @@ public class BleListener : IProximityListener
         _bleScanner = bleScanner;
     }
 
-    private void OnScanResult(ScanCallbackType callbackType, ScanResult? result)
+    private void OnScanResult(BleScanCallbackType callbackType, ScanResult? result)
     {
         try
         {
@@ -43,7 +44,7 @@ public class BleListener : IProximityListener
             var speakerIdBytes = bytes[0..SpeakerIdLength];
             var speakerId = Encoding.ASCII.GetString(speakerIdBytes);
 
-            if (_isSpeakerIdFilterEnabled && speakerId != _speakerId?.SenderId)
+            if (_isSpeakerIdFilterEnabled && speakerId != _speakerId?.SpeakerId)
             {
                 return;
             }
@@ -51,7 +52,7 @@ public class BleListener : IProximityListener
             var currentPage = (int)bytes[SpeakerIdLength];
             var totalPages = (int)bytes[SpeakerIdLength + 1];
 
-            var package = new BlePackageModel
+            var package = new BlePackageMessage
             {
                 SenderId = speakerId,
                 CurrentPage = currentPage,
@@ -68,16 +69,17 @@ public class BleListener : IProximityListener
         }
     }
     
-    private void OnScanFailed(ScanFailure errorCode)
+    private void OnScanFailed(BleScanFailure errorCode)
     {
+        // TODO: think about this mapper layer
         var listenType = errorCode switch
         {
-            ScanFailure.AlreadyStarted => ListenFailed.AlreadyStarted,
-            ScanFailure.ApplicationRegistrationFailed => ListenFailed.ApplicationRegistrationFailed,
-            ScanFailure.InternalError => ListenFailed.InternalError,
-            ScanFailure.FeatureUnsupported => ListenFailed.FeatureUnsupported,
-            ScanFailure.OutOfHardwareResources => ListenFailed.OutOfHardwareResources,
-            ScanFailure.ScanningTooFrequently => ListenFailed.ScanningTooFrequently,
+            BleScanFailure.AlreadyStarted => ListenFailed.AlreadyStarted,
+            BleScanFailure.ApplicationRegistrationFailed => ListenFailed.ApplicationRegistrationFailed,
+            BleScanFailure.InternalError => ListenFailed.InternalError,
+            BleScanFailure.FeatureUnsupported => ListenFailed.FeatureUnsupported,
+            BleScanFailure.OutOfHardwareResources => ListenFailed.OutOfHardwareResources,
+            BleScanFailure.ScanningTooFrequently => ListenFailed.ScanningTooFrequently,
             _ => throw new InvalidEnumArgumentException("Enum out of range")
         };
         
@@ -97,16 +99,16 @@ public class BleListener : IProximityListener
     
     public void StartListenSpeaker(
         string appId,
-        SenderIdentifier senderIdentifier,
-        Action<BlePackageModel>? listenResultCallback,
+        SpeakerIdentifier speakerIdentifier,
+        Action<BlePackageMessage>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback)
     {
         _listenId = GetSenderUuid(appId);
-        _speakerId = senderIdentifier;
+        _speakerId = speakerIdentifier;
         _isSpeakerIdFilterEnabled = true;
         
         var scanConfig = new ScanConfig(
-            Mode: ScanMode.LowLatency,
+            Mode: BleScanMode.LowLatency,
             ServiceDataUuid: _listenId);
 
         _onListenResultHandler = listenResultCallback;
@@ -117,14 +119,14 @@ public class BleListener : IProximityListener
 
     public void StartListenAllSpeakers(
         string appId,
-        Action<BlePackageModel>? listenResultCallback,
+        Action<BlePackageMessage>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback)
     {
         _listenId = GetSenderUuid(appId);
         _isSpeakerIdFilterEnabled = false;
         
         var scanConfig = new ScanConfig(
-            Mode: ScanMode.LowLatency,
+            Mode: BleScanMode.LowLatency,
             ServiceDataUuid: _listenId);
 
         _onListenResultHandler = listenResultCallback;

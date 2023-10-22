@@ -3,10 +3,9 @@ using CommunityToolkit.Maui;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Configuration;
-using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Listeners;
-using ProximitySlides.App.Managers.Senders;
-using ProximitySlides.App.Platforms.Android.Managers;
+using ProximitySlides.App.Managers.Speakers;
+using ProximitySlides.Core;
 
 namespace ProximitySlides.App;
 
@@ -31,12 +30,10 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        builder.Services.AddServices(builder.Configuration);
+        builder.Services.AddApp(builder.Configuration);
+        builder.Services.AddCore();
 
-        builder.Services.AddSingleton<IBleScanner, BleScanner>();
-        builder.Services.AddSingleton<IBleAdvertiser, BleAdvertiser>();
-
-        builder.Services.AddSingleton<IProximitySender, BleSender>();
+        builder.Services.AddSingleton<IProximitySender, BleSpeaker>();
         builder.Services.AddSingleton<IProximityListener, BleListener>();
 
         return builder.Build();

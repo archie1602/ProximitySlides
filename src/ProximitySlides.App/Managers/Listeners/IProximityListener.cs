@@ -6,13 +6,13 @@ public interface IProximityListener
 {
     void StartListenSpeaker(
         string appId,
-        SenderIdentifier senderIdentifier,
-        Action<BlePackageModel>? listenResultCallback,
+        SpeakerIdentifier speakerIdentifier,
+        Action<BlePackageMessage>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback);
 
     void StartListenAllSpeakers(
         string appId,
-        Action<BlePackageModel>? listenResultCallback,
+        Action<BlePackageMessage>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback);
 
     void StopListen();

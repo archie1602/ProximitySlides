@@ -5,9 +5,9 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
-using ProximitySlides.App.Extensions;
 using ProximitySlides.App.Managers;
-using ProximitySlides.App.Managers.Senders;
+using ProximitySlides.App.Managers.Speakers;
+using ProximitySlides.Core.Extensions;
 
 namespace ProximitySlides.App.ViewModels;
 

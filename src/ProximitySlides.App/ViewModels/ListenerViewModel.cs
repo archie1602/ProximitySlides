@@ -25,7 +25,7 @@ public partial class ListenerViewModel : ObservableObject
     private Task? _updateUiSpeakersListTask = null;
     private CancellationTokenSource _updateUiSpeakersListCtk = new();
 
-    private IDictionary<Speaker, ISet<BlePackageModel>> _speakersPackages;
+    private IDictionary<Speaker, ISet<BlePackageMessage>> _speakersPackages;
 
     [ObservableProperty]
     private ObservableCollection<string> _speakers;
@@ -42,7 +42,7 @@ public partial class ListenerViewModel : ObservableObject
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
         _listenerSettings = configuration.GetConfigurationSettings<ListenerSettings>();
 
-        _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageModel>>();
+        _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
         Speakers = new ObservableCollection<string>();
     }
 
@@ -52,7 +52,7 @@ public partial class ListenerViewModel : ObservableObject
         await Shell.Current.GoToAsync($"{nameof(ListenerDetailsPage)}?SpeakerId={speakerId}");
     }
 
-    private void OnReceivedPackage(BlePackageModel package)
+    private void OnReceivedPackage(BlePackageMessage package)
     {
         lock (_lock)
         {
@@ -69,7 +69,7 @@ public partial class ListenerViewModel : ObservableObject
             if (!isSpeakerExists)
             {
                 speaker.CountReceivedPackages = 1;
-                speakerPackages = new SortedSet<BlePackageModel>(comparer: new BlePackageComparator());
+                speakerPackages = new SortedSet<BlePackageMessage>(comparer: new BlePackageComparator());
                 _speakersPackages.Add(speaker, speakerPackages);
             }
             else
@@ -165,7 +165,7 @@ public partial class ListenerViewModel : ObservableObject
         {
             lock (_lock)
             {
-                _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageModel>>();
+                _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
             }
 
             _proximityListener.StartListenAllSpeakers(_appSettings.AppAdvertiserId, OnReceivedPackage, OnListenFailed);

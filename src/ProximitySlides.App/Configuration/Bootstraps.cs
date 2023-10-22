@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
+using ProximitySlides.App.Managers;
 using ProximitySlides.App.Pages;
 using ProximitySlides.App.ViewModels;
 
@@ -8,7 +9,7 @@ namespace ProximitySlides.App.Configuration;
 public static class Bootstraps
 {
     [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
-    public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApp(this IServiceCollection services, IConfiguration configuration)
     {
         //services.Configure<ListenerSettings>(_ => configuration.GetSection(ListenerSettings.SectionName).Get<ListenerSettings>());
 
@@ -23,6 +24,8 @@ public static class Bootstraps
         services.AddSingleton<SpeakerViewModel>();
         services.AddSingleton<ListenerViewModel>();
         services.AddSingleton<ListenerDetailsViewModel>();
+
+        services.AddSingleton<ISlideListener, SlideListener>();
         
         return services;
     }

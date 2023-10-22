@@ -121,6 +121,12 @@
 
 
 
+    <ItemGroup>
+      <Folder Include="Platforms\Android\Managers\" />
+    </ItemGroup>
+
+
+
 
 
 

@@ -6,10 +6,10 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
-using ProximitySlides.App.Extensions;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Listeners;
 using ProximitySlides.App.Models;
+using ProximitySlides.Core.Extensions;
 
 namespace ProximitySlides.App.ViewModels;
 
@@ -46,7 +46,7 @@ public partial class ListenerDetailsViewModel : ObservableObject
     [ObservableProperty]
     private string _speakerId = null!;
 
-    private void OnReceivedPackage(BlePackageModel package)
+    private void OnReceivedPackage(BlePackageMessage package)
     {
         var payloadStr = Encoding.ASCII.GetString(package.Payload);
         var decompressSlideJson = payloadStr.DecompressJson();
@@ -85,11 +85,11 @@ public partial class ListenerDetailsViewModel : ObservableObject
     {
         try
         {
-            var speakerIdentifier = new SenderIdentifier(SpeakerId);
+            var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
             
             _proximityListener.StartListenSpeaker(
                 appId: _appSettings.AppAdvertiserId,
-                senderIdentifier: speakerIdentifier,
+                speakerIdentifier: speakerIdentifier,
                 listenResultCallback: OnReceivedPackage,
                 listenFailedCallback: OnListenFailed);
         }
