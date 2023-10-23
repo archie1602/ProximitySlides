@@ -1,15 +1,10 @@
 ﻿using System.Collections.Concurrent;
-using System.Text;
-using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
 using ProximitySlides.App.Managers;
-using ProximitySlides.App.Managers.Listeners;
-using ProximitySlides.App.Models;
-using ProximitySlides.Core.Extensions;
 
 namespace ProximitySlides.App.ViewModels;
 
@@ -27,7 +22,7 @@ public class Slide
 public partial class ListenerDetailsViewModel : ObservableObject
 {
     private readonly ILogger<ListenerDetailsViewModel> _logger;
-    private readonly IProximityListener _proximityListener;
+    private readonly ISlideListener _slideListener;
     private readonly AppSettings _appSettings;
 
     private IDictionary<SlideInfo, Slide> _speakerSlides;
@@ -35,10 +30,10 @@ public partial class ListenerDetailsViewModel : ObservableObject
     public ListenerDetailsViewModel(
         ILogger<ListenerDetailsViewModel> logger,
         IConfiguration configuration,
-        IProximityListener proximityListener)
+        ISlideListener slideListener)
     {
         _logger = logger;
-        _proximityListener = proximityListener;
+        _slideListener = slideListener;
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
         _speakerSlides = new ConcurrentDictionary<SlideInfo, Slide>();
     }
@@ -46,33 +41,45 @@ public partial class ListenerDetailsViewModel : ObservableObject
     [ObservableProperty]
     private string _speakerId = null!;
 
-    private void OnReceivedPackage(BlePackageMessage package)
+    private void OnReceivedSlide(SlideDto slideDto)
     {
-        var payloadStr = Encoding.ASCII.GetString(package.Payload);
-        var decompressSlideJson = payloadStr.DecompressJson();
-        var slideMsg = JsonSerializer.Deserialize<SlideMessage>(decompressSlideJson);
-
-        if (slideMsg is null)
-        {
-            return;
-        }
-
-        var receivedSlide = new Slide
-        {
-            Url = new Uri(slideMsg.Url)
-        };
-
-        var slideInfo = new SlideInfo()
-        {
-            CurrentSlide = slideMsg.CurrentSlide
-        };
-
-        var isSlideExists = _speakerSlides.TryGetValue(slideInfo, out var slide);
-
-        if (isSlideExists)
-        {
-            
-        }
+        // TODO: stopped here: остановился на том, что доделал SlideListener, и теперь нужно его внедрить сюда
+     
+        // IDEA:
+        
+        /*
+         * if (slideDto.TimeToDeliver > определенного порога)
+         * => доставка происходит долго и с перебоями
+         * => можно сделать вывод, что пользователь находится далеко
+         * Note: также еще нужна Job'a, которая будет смотреть, когда был получен последний слайд
+         * и если обновления давно не происходило, тогда можно сделать вывод о том, что speaker отключился
+         */
+        
+        // var payloadStr = Encoding.ASCII.GetString(package.Payload);
+        // var decompressSlideJson = payloadStr.DecompressJson();
+        // var slideMsg = JsonSerializer.Deserialize<SlideMessage>(decompressSlideJson);
+        //
+        // if (slideMsg is null)
+        // {
+        //     return;
+        // }
+        //
+        // var receivedSlide = new Slide
+        // {
+        //     Url = new Uri(slideMsg.Url)
+        // };
+        //
+        // var slideInfo = new SlideInfo()
+        // {
+        //     CurrentSlide = slideMsg.CurrentSlide
+        // };
+        //
+        // var isSlideExists = _speakerSlides.TryGetValue(slideInfo, out var slide);
+        //
+        // if (isSlideExists)
+        // {
+        //     
+        // }
     }
     
     private void OnListenFailed(ListenFailed errorCode)
@@ -87,10 +94,10 @@ public partial class ListenerDetailsViewModel : ObservableObject
         {
             var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
             
-            _proximityListener.StartListenSpeaker(
+            _slideListener.StartListenSlides(
                 appId: _appSettings.AppAdvertiserId,
                 speakerIdentifier: speakerIdentifier,
-                listenResultCallback: OnReceivedPackage,
+                listenResultCallback: OnReceivedSlide,
                 listenFailedCallback: OnListenFailed);
         }
         catch (Exception e)
@@ -104,10 +111,11 @@ public partial class ListenerDetailsViewModel : ObservableObject
     {
         try
         {
-            _proximityListener.StopListen();
+            _slideListener.StopListen();
         }
         catch (Exception e)
         {
+            // TODO: change log message
             _logger.LogError(e, "Error occurred while trying to finish listening to speaker with id {SpeakerId}", SpeakerId);
         }
     }
