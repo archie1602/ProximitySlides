@@ -149,7 +149,7 @@ public class SlideListener : ISlideListener
         foreach (var p in payloads)
         {
             p.Payload.CopyTo(result, lastIndex);
-            lastIndex = p.Length;
+            lastIndex += p.Length;
         }
         
         return result;

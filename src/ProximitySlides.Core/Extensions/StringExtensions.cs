@@ -20,10 +20,10 @@ public static class StringExtensions
     {
         return jsonStr
             .ReplaceFirst("\"u\":\"", "u:")
-            .ReplaceFirst("\"c\":\"", "c:")
-            .ReplaceFirst("\"t\":\"", "t:")
+            .ReplaceFirst("\"c\":", "c:")
+            .ReplaceFirst("\"t\":", "t:")
             .Replace("\",", ",")
-            .Replace("\"}", "")
+            .Replace("}", "")
             .ReplaceFirst("{", "");
     }
     
@@ -31,8 +31,8 @@ public static class StringExtensions
     {
         return "{" + jsonStr
             .ReplaceFirst("u:", "\"u\":\"")
-            .ReplaceFirst("c:", "\"c\":\"")
-            .ReplaceFirst("t:", "\"t\":\"")
-            .Replace(",", "\",") + "\"}";
+            .ReplaceFirst("c:", "\"c\":")
+            .ReplaceFirst("t:", "\"t\":")
+            .ReplaceFirst(",", "\",") + "}";
     }
 }
