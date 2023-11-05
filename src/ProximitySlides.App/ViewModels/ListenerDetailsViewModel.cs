@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
 using ProximitySlides.App.Managers;
+using WatsonWebserver.Core;
+using WatsonWebserver.Lite;
 
 namespace ProximitySlides.App.ViewModels;
 
@@ -16,6 +18,9 @@ public class SlideInfo
 public class Slide
 {
     public required Uri Url { get; set; }
+    public required int CurrentSlide { get; set; }
+    public required int TotalSlides { get; set; }
+    public required TimeSpan TimeToDeliver { get; set; }
 }
 
 [QueryProperty(nameof(SpeakerId), nameof(SpeakerId))]
@@ -25,7 +30,13 @@ public partial class ListenerDetailsViewModel : ObservableObject
     private readonly ISlideListener _slideListener;
     private readonly AppSettings _appSettings;
 
-    private IDictionary<SlideInfo, Slide> _speakerSlides;
+    private readonly object _lock;
+    private readonly IDictionary<int, Slide> _speakerSlides;
+    
+    private Task? _checkSpeakerActivityTask;
+    private CancellationTokenSource _checkSpeakerActivityCts;
+    
+    private readonly WebserverLite _server;
 
     public ListenerDetailsViewModel(
         ILogger<ListenerDetailsViewModel> logger,
@@ -35,18 +46,65 @@ public partial class ListenerDetailsViewModel : ObservableObject
         _logger = logger;
         _slideListener = slideListener;
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
-        _speakerSlides = new ConcurrentDictionary<SlideInfo, Slide>();
+        
+        _lock = new object();
+        _speakerSlides = new ConcurrentDictionary<int, Slide>();
+        
+        _checkSpeakerActivityCts = new CancellationTokenSource();
+        
+        var settings = new WebserverSettings("127.0.0.1", 9000);
+        _server = new WebserverLite(settings, DefaultRoute);
+        
+        _server.Routes.PreAuthentication.Content.BaseDirectory = FileSystem.Current.AppDataDirectory;
+
+        _server.Routes.PreAuthentication.Content.Add(
+            "/pdfjs/",
+            true);
     }
+
+    [ObservableProperty]
+    private ImageSource _currentSlideImage = null!;
+
+    [ObservableProperty]
+    private int _currentSlidePage;
     
+    [ObservableProperty]
+    private Slide _currentSlide = null!;
+
     [ObservableProperty]
     private string _speakerId = null!;
 
+    private DateTime? _lastReceivedMessageTime;
+
+    private static async Task DefaultRoute(HttpContextBase ctx) =>
+        await ctx.Response.Send($"Hello from default route: {ctx.Request.Url.RawWithQuery}");
+    
     private void OnReceivedSlide(SlideDto slideDto)
     {
-        // TODO: stopped here: остановился на том, что доделал SlideListener, и теперь нужно его внедрить сюда
-     
-        // IDEA:
+        _lastReceivedMessageTime = DateTime.UtcNow;
+
+        if (_speakerSlides.TryGetValue(slideDto.CurrentSlide, out var existingSlide))
+        {
+            // set current slide to display
+            SetCurrentSlide(existingSlide);
+
+            return;
+        }
+
+        var newSlide = new Slide
+        {
+            Url = slideDto.Url,
+            CurrentSlide = slideDto.CurrentSlide,
+            TotalSlides = slideDto.TotalSlides,
+            TimeToDeliver = slideDto.TimeToDeliver
+        };
         
+        _speakerSlides.Add(slideDto.CurrentSlide, newSlide);
+
+        SetCurrentSlide(newSlide);
+
+        // IDEA:
+
         /*
          * if (slideDto.TimeToDeliver > определенного порога)
          * => доставка происходит долго и с перебоями
@@ -54,32 +112,47 @@ public partial class ListenerDetailsViewModel : ObservableObject
          * Note: также еще нужна Job'a, которая будет смотреть, когда был получен последний слайд
          * и если обновления давно не происходило, тогда можно сделать вывод о том, что speaker отключился
          */
+    }
+
+    private void SetCurrentSlide(Slide existingSlide)
+    {
+        CurrentSlide = existingSlide;
+        CurrentSlidePage = existingSlide.CurrentSlide;
+        CurrentSlideImage = ImageSource.FromUri(existingSlide.Url);
+    }
+
+    private async Task CheckSpeakerActivityJob()
+    {
+        // TODO: move to config
+        var maxInactiveSpeakerTime = TimeSpan.FromSeconds(10);
         
-        // var payloadStr = Encoding.ASCII.GetString(package.Payload);
-        // var decompressSlideJson = payloadStr.DecompressJson();
-        // var slideMsg = JsonSerializer.Deserialize<SlideMessage>(decompressSlideJson);
-        //
-        // if (slideMsg is null)
-        // {
-        //     return;
-        // }
-        //
-        // var receivedSlide = new Slide
-        // {
-        //     Url = new Uri(slideMsg.Url)
-        // };
-        //
-        // var slideInfo = new SlideInfo()
-        // {
-        //     CurrentSlide = slideMsg.CurrentSlide
-        // };
-        //
-        // var isSlideExists = _speakerSlides.TryGetValue(slideInfo, out var slide);
-        //
-        // if (isSlideExists)
-        // {
-        //     
-        // }
+        while (!_checkSpeakerActivityCts.Token.IsCancellationRequested)
+        {
+            try
+            {
+                if (_lastReceivedMessageTime.HasValue)
+                {
+                    if (DateTime.UtcNow - _lastReceivedMessageTime.Value > maxInactiveSpeakerTime)
+                    {
+                        // => speaker is inactive => stop viewing presentation slides
+                        await MainThread.InvokeOnMainThreadAsync(() =>
+                        {
+                            Shell.Current.DisplayAlert(
+                                "Inactive speaker",
+                                "Speaker is inactive and most likely disconnected",
+                                "ok");
+                        });
+                    }
+                }
+
+                // TODO: move to config
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+            catch (Exception e)
+            {
+                // TODO:
+            }
+        }
     }
     
     private void OnListenFailed(ListenFailed errorCode)
@@ -88,10 +161,12 @@ public partial class ListenerDetailsViewModel : ObservableObject
     }
     
     [RelayCommand]
-    private void OnAppearing()
+    private async Task OnAppearing()
     {
         try
         {
+            _server.Start();
+            
             var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
             
             _slideListener.StartListenSlides(
@@ -99,6 +174,10 @@ public partial class ListenerDetailsViewModel : ObservableObject
                 speakerIdentifier: speakerIdentifier,
                 listenResultCallback: OnReceivedSlide,
                 listenFailedCallback: OnListenFailed);
+            
+            _checkSpeakerActivityCts = new CancellationTokenSource();
+            _checkSpeakerActivityTask = Task.Run(CheckSpeakerActivityJob, _checkSpeakerActivityCts.Token);
+
         }
         catch (Exception e)
         {
@@ -111,7 +190,10 @@ public partial class ListenerDetailsViewModel : ObservableObject
     {
         try
         {
+            _server.Stop();
+            
             _slideListener.StopListen();
+            _checkSpeakerActivityCts.Cancel();
         }
         catch (Exception e)
         {

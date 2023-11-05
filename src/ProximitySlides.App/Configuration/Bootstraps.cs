@@ -24,6 +24,7 @@ public static class Bootstraps
         services.AddSingleton<SpeakerViewModel>();
         services.AddSingleton<ListenerViewModel>();
         services.AddSingleton<ListenerDetailsViewModel>();
+        services.AddSingleton<TestViewModel>();
 
         services.AddSingleton<ISlideListener, SlideListener>();
         
@@ -39,6 +40,7 @@ public static class Bootstraps
         services.AddTransient<SpeakerPage>();
         services.AddTransient<ListenerPage>();
         services.AddTransient<ListenerDetailsPage>();
+        services.AddTransient<TestPage>();
         
         return services;
     }

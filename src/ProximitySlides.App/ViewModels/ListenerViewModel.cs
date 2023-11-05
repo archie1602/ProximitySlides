@@ -19,11 +19,11 @@ public partial class ListenerViewModel : ObservableObject
     private readonly AppSettings _appSettings;
     private readonly ListenerSettings _listenerSettings;
 
-    private Task? _clearInactiveSpeakersTask = null;
-    private CancellationTokenSource _clearInactiveSpeakersCtk = new();
+    private Task? _clearInactiveSpeakersTask;
+    private CancellationTokenSource _clearInactiveSpeakersCts = new();
 
-    private Task? _updateUiSpeakersListTask = null;
-    private CancellationTokenSource _updateUiSpeakersListCtk = new();
+    private Task? _updateUiSpeakersListTask;
+    private CancellationTokenSource _updateUiSpeakersListCts = new();
 
     private IDictionary<Speaker, ISet<BlePackageMessage>> _speakersPackages;
 
@@ -91,7 +91,7 @@ public partial class ListenerViewModel : ObservableObject
 
     private async Task ClearInactiveSpeakersJob()
     {
-        while (!_clearInactiveSpeakersCtk.Token.IsCancellationRequested)
+        while (!_clearInactiveSpeakersCts.Token.IsCancellationRequested)
         {
             lock (_lock)
             {
@@ -112,7 +112,7 @@ public partial class ListenerViewModel : ObservableObject
 
     private async Task UpdateUiSpeakersListJob()
     {
-        while (!_updateUiSpeakersListCtk.Token.IsCancellationRequested)
+        while (!_updateUiSpeakersListCts.Token.IsCancellationRequested)
         {
             try
             {
@@ -126,7 +126,7 @@ public partial class ListenerViewModel : ObservableObject
                         .ToList();
                 }
                 
-                MainThread.BeginInvokeOnMainThread(() =>
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     Speakers.Clear();
 
@@ -141,7 +141,7 @@ public partial class ListenerViewModel : ObservableObject
             }
             catch (Exception ex)
             {
-                var a = 5;
+                // TODO:
             }
         }
     }
@@ -155,11 +155,11 @@ public partial class ListenerViewModel : ObservableObject
     [RelayCommand]
     private void OnAppearing()
     {
-        _clearInactiveSpeakersCtk = new CancellationTokenSource();
-        _updateUiSpeakersListCtk = new CancellationTokenSource();
+        _clearInactiveSpeakersCts = new CancellationTokenSource();
+        _updateUiSpeakersListCts = new CancellationTokenSource();
 
-        _clearInactiveSpeakersTask = Task.Run(ClearInactiveSpeakersJob, _clearInactiveSpeakersCtk.Token);
-        _updateUiSpeakersListTask = Task.Run(UpdateUiSpeakersListJob, _updateUiSpeakersListCtk.Token);
+        _clearInactiveSpeakersTask = Task.Run(ClearInactiveSpeakersJob, _clearInactiveSpeakersCts.Token);
+        _updateUiSpeakersListTask = Task.Run(UpdateUiSpeakersListJob, _updateUiSpeakersListCts.Token);
 
         try
         {
@@ -186,8 +186,8 @@ public partial class ListenerViewModel : ObservableObject
         {
             _proximityListener.StopListen();
             
-            _clearInactiveSpeakersCtk.Cancel();
-            _updateUiSpeakersListCtk.Cancel();
+            _clearInactiveSpeakersCts.Cancel();
+            _updateUiSpeakersListCts.Cancel();
         }
         catch (Exception ex)
         {

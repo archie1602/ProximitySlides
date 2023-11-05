@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="ProximitySlides.App.Pages.TestPage"
+             xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
+             x:DataType="viewModels:TestViewModel">
+
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            EventName="Appearing"
+            Command="{Binding AppearingCommand}"/>
+        
+        <toolkit:EventToCommandBehavior
+            EventName="Disappearing"
+            Command="{Binding DisappearingCommand}"/>
+    </ContentPage.Behaviors>
+    
+    <WebView WidthRequest="300"
+             HeightRequest="300"
+             Source="{Binding PathToPdf}">
+    </WebView>
+
+</ContentPage>

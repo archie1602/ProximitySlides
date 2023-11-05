@@ -21,7 +21,7 @@
         </Tab>
         <Tab Title="Favorites"
              Icon="tab_favorites.svg">
-            <ShellContent ContentTemplate="{DataTemplate pages:ListenerPage}"/>
+            <ShellContent ContentTemplate="{DataTemplate pages:TestPage}"/>
         </Tab>
     </TabBar>
     
