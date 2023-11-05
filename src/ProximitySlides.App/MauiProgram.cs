@@ -6,6 +6,7 @@ using ProximitySlides.App.Configuration;
 using ProximitySlides.App.Managers.Listeners;
 using ProximitySlides.App.Managers.Speakers;
 using ProximitySlides.Core;
+using Syncfusion.Maui.Core.Hosting;
 
 namespace ProximitySlides.App;
 
@@ -17,6 +18,7 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
+            .ConfigureSyncfusionCore()
             .UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
             {

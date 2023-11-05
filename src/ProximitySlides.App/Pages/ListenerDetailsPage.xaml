@@ -23,12 +23,10 @@
                HorizontalOptions="Center"
                VerticalOptions="Center"/>
         
-        <Image>
-            <Image.Source>
-                <UriImageSource Uri="{Binding CurrentSlide.Url}"
-                                CachingEnabled="False"/>
-            </Image.Source>
-        </Image>
+        <WebView WidthRequest="300"
+                 HeightRequest="300"
+                 Source="{Binding PathToPdf}">
+        </WebView>
     </Grid>
     
 </ContentPage>

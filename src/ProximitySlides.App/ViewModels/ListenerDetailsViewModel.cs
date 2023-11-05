@@ -73,6 +73,9 @@ public partial class ListenerDetailsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _speakerId = null!;
+    
+    [ObservableProperty]
+    private string _pathToPdf = null!;
 
     private DateTime? _lastReceivedMessageTime;
 
