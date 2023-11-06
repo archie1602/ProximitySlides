@@ -60,7 +60,7 @@ public class SlideListener : ISlideListener
             if (!_handlersQueue.TryDequeue(out var package))
             {
                 // TODO: move to config
-                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                // await Task.Delay(TimeSpan.FromMilliseconds(100));
                 continue;
             }
             
@@ -148,13 +148,18 @@ public class SlideListener : ISlideListener
     {
         await MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            await _onListenResultHandler?.Invoke(new SlideDto
+            var t = _onListenResultHandler?.Invoke(new SlideDto
             {
                 Url = new Uri(slideMsg.Url),
                 CurrentSlide = slideMsg.CurrentSlide,
                 TotalSlides = slideMsg.TotalSlides,
                 TimeToDeliver = _speakerSlides.Max(it => it.ReceivedAt) - _speakerSlides.Min(it => it.ReceivedAt)
             });
+
+            if (t is not null)
+            {
+                await t;
+            }
         });
 
         _speakerSlides.Clear();

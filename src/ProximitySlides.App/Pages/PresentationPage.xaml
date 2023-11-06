@@ -17,16 +17,28 @@
             Command="{Binding DisappearingCommand}"/>
     </ContentPage.Behaviors>
     
-    <Grid>
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding GoBackCommand}"></BackButtonBehavior>
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="50, 300, Auto"
+          ColumnDefinitions="*">
+
         <Label Text="{Binding SpeakerId}"
                FontSize="22"
                HorizontalOptions="Center"
                VerticalOptions="Center"/>
         
-        <WebView WidthRequest="300"
-                 HeightRequest="300"
+        <WebView Grid.Row="1"
                  Source="{Binding SlideRenderSource}">
         </WebView>
+        
+        <!-- <Button Grid.Row="2" -->
+        <!--         WidthRequest="250" -->
+        <!--         HeightRequest="50" -->
+        <!--         Text="Leave" -->
+        <!--         Margin="0, 10, 0, 0" -->
+        <!--         Command="{Binding NavigateToListenerCommand}"/> -->
     </Grid>
     
 </ContentPage>

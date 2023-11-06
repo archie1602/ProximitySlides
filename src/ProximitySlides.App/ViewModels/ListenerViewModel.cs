@@ -121,7 +121,7 @@ public partial class ListenerViewModel : ObservableObject
                 lock (_lock)
                 {
                     speakersToDisplay = _speakersPackages
-                        .Where(it => it.Key.CountReceivedPackages == it.Key.MaxPackages)
+                        // .Where(it => it.Key.CountReceivedPackages == it.Key.MaxPackages)
                         .Select(it => it.Key.SpeakerId)
                         .ToList();
                 }
@@ -163,6 +163,8 @@ public partial class ListenerViewModel : ObservableObject
 
         try
         {
+            Speakers.Clear();
+            
             lock (_lock)
             {
                 _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
@@ -187,7 +189,11 @@ public partial class ListenerViewModel : ObservableObject
             _proximityListener.StopListen();
             
             _clearInactiveSpeakersCts.Cancel();
+            // _clearInactiveSpeakersTask?.GetAwaiter().GetResult();
+            
             _updateUiSpeakersListCts.Cancel();
+            _speakersPackages.Clear(); 
+            Speakers.Clear();
         }
         catch (Exception ex)
         {

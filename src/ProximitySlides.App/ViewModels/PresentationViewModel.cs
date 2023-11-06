@@ -146,14 +146,17 @@ public partial class PresentationViewModel : ObservableObject
 
     private async Task<string> DownloadAndSaveSlide(Uri url, int page, CancellationToken cancellationToken)
     {
-        await using var fileStream = await _httpClient.GetStreamAsync(url, cancellationToken);
-
-        var pathToFile = await FileHelper
-            .SaveFileAsync(
-                fileStream,
-                _speakerSlidesStoragePath,
-                string.Format(SlideNamePattern, page),
-                cancellationToken);
+        string pathToFile;
+        
+        using (var fileStream = await _httpClient.GetStreamAsync(url, cancellationToken))
+        {
+            pathToFile = await FileHelper
+                .SaveFileAsync(
+                    fileStream,
+                    _speakerSlidesStoragePath,
+                    string.Format(SlideNamePattern, page),
+                    cancellationToken);
+        }
 
         return pathToFile;
     }
@@ -212,6 +215,8 @@ public partial class PresentationViewModel : ObservableObject
     {
         try
         {
+            _speakerSlides.Clear();
+            
             // INITIAL SETUP
 
             _speakerDirectoryName = Guid.NewGuid().ToString();
@@ -248,14 +253,28 @@ public partial class PresentationViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OnDisappearing()
+    private async Task OnDisappearing()
+    {
+
+    }
+    
+    [RelayCommand]
+    private async Task GoBack()
     {
         try
         {
             _server.Stop();
 
             _slideListener.StopListen();
+
             _checkSpeakerActivityCts.Cancel();
+
+            if (_checkSpeakerActivityTask is not null)
+            {
+                await _checkSpeakerActivityTask;
+            }
+            
+            _speakerSlides.Clear();
         }
         catch (Exception e)
         {
@@ -270,6 +289,10 @@ public partial class PresentationViewModel : ObservableObject
             {
                 Directory.Delete(_speakerSlidesStoragePath, true);
             }
+
+            // TODO: тут проблема: OnAppearing у Listener вызывается быстрее чем отработает код
+            await Shell.Current.Navigation.PopAsync();
+            var a = 5;
         }
     }
 }

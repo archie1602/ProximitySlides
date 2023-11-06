@@ -155,6 +155,8 @@ public partial class SpeakerViewModel : ObservableObject
                 //     CurrentSlide = 1,
                 //     TotalSlides = 3
                 // };
+                
+                var speakerId = _proximitySender.GenerateSenderIdentifier();
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -162,7 +164,7 @@ public partial class SpeakerViewModel : ObservableObject
                     {
                         for(var i = 0; i < 5; i++)
                         {
-                            await SendSlide(s);
+                            await SendSlide(s, speakerId);
                             // await Task.Delay(TimeSpan.FromMilliseconds(300));
                         }
                     }
@@ -176,13 +178,11 @@ public partial class SpeakerViewModel : ObservableObject
         });
     }
 
-    private async Task SendSlide(SlideMessage s)
+    private async Task SendSlide(SlideMessage s, SpeakerIdentifier speakerId)
     {
         var slideJson = JsonSerializer.Serialize(s);
         var slideJsonCompress = slideJson.CompressJson();
-
-        var speakerId = _proximitySender.GenerateSenderIdentifier();
-
+        
         var dataBytes = Encoding.ASCII.GetBytes(slideJsonCompress);
 
         await _proximitySender.SendMessage(_appSettings.AppAdvertiserId, speakerId, dataBytes,

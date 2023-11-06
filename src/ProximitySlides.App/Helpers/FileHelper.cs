@@ -15,9 +15,11 @@ public static class FileHelper
         
         var fullPath = Path.Combine(destinationDirectory, filename);
 
-        await using var outputFileStream = new FileStream(fullPath, FileMode.Create);
-        await fileStream.CopyToAsync(outputFileStream, cancellationToken);
-
+        using (var outputFileStream = new FileStream(fullPath, FileMode.Create))
+        {
+            await fileStream.CopyToAsync(outputFileStream, cancellationToken);
+        }
+        
         return fullPath;
     }
 }
