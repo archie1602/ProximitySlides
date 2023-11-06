@@ -10,6 +10,6 @@ public partial class AppShell : Shell
         
         Routing.RegisterRoute(nameof(SpeakerPage), typeof(SpeakerPage));
         Routing.RegisterRoute(nameof(ListenerPage), typeof(ListenerPage));
-        Routing.RegisterRoute(nameof(ListenerDetailsPage), typeof(ListenerDetailsPage));
+        Routing.RegisterRoute(nameof(PresentationPage), typeof(PresentationPage));
     }
 }

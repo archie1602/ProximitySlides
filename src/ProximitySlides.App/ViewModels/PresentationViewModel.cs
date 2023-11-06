@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using Android.Util;
+﻿using System.Collections.Concurrent;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
@@ -8,47 +6,16 @@ using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
 using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
+using ProximitySlides.App.Models;
 using WatsonWebserver.Core;
 using WatsonWebserver.Lite;
 
 namespace ProximitySlides.App.ViewModels;
 
-public class SlideInfo
-{
-    public int CurrentSlide { get; set; }
-}
-
-public class SlideStorage
-{
-    // slide_1.pdf
-    public required string FileName { get; set; }
-    
-    // speakers
-    public required string BaseSpeakersDirectory { get; set; }
-
-    // 430358da-965d-4123-94f3-dc480ac5406b
-    public required string BaseCurrentSpeakerDirectory { get; set; }
-
-    // /data/data/com.companyname.proximityslides.app/files/speakers/430358da-965d-4123-94f3-dc480ac5406b/slide_1.pdf
-    public required string AbsoluteStoragePath { get; set; }
-
-    // speakers/430358da-965d-4123-94f3-dc480ac5406b/slide_1.pdf
-    public required string RelativeStoragePath { get; set; }
-}
-
-public class Slide
-{
-    public required Uri Url { get; set; }
-    public required int CurrentSlide { get; set; }
-    public required int TotalSlides { get; set; }
-    public required SlideStorage Storage { get; set; }
-    public required TimeSpan TimeToDeliver { get; set; }
-}
-
 [QueryProperty(nameof(SpeakerId), nameof(SpeakerId))]
-public partial class ListenerDetailsViewModel : ObservableObject
+public partial class PresentationViewModel : ObservableObject
 {
-    private readonly ILogger<ListenerDetailsViewModel> _logger;
+    private readonly ILogger<PresentationViewModel> _logger;
     private readonly ISlideListener _slideListener;
     private readonly AppSettings _appSettings;
     private readonly PresentationSettings _presentationSettings;
@@ -67,8 +34,8 @@ public partial class ListenerDetailsViewModel : ObservableObject
     private string _speakerDirectoryName;
     private string _speakerSlidesStoragePath;
 
-    public ListenerDetailsViewModel(
-        ILogger<ListenerDetailsViewModel> logger,
+    public PresentationViewModel(
+        ILogger<PresentationViewModel> logger,
         IConfiguration configuration,
         ISlideListener slideListener)
     {
@@ -123,20 +90,11 @@ public partial class ListenerDetailsViewModel : ObservableObject
     
     private async Task OnReceivedSlide(SlideDto slideDto)
     {
-        bool b;
-        Slide existingSlideTmp;
-
-        var guid = Guid.NewGuid();
-
         try
         {
             _lastReceivedMessageTime = DateTime.UtcNow;
-
-            //b = _speakerSlides.TryGetValue(slideDto.CurrentSlide, out var existingSlide);
-            b = Add(slideDto.CurrentSlide, out var existingSlide, guid);
-            existingSlideTmp = existingSlide;
-
-            if (b)
+            
+            if (_speakerSlides.TryGetValue(slideDto.CurrentSlide, out var existingSlide))
             {
                 // set current slide to display
                 SetCurrentSlide(existingSlide);
@@ -182,15 +140,8 @@ public partial class ListenerDetailsViewModel : ObservableObject
         }
         catch (Exception e)
         {
-            Log.Debug("MY_SERVICE", $"Thread Id: {Thread.CurrentThread.ManagedThreadId}; Guid: {guid}");
-            var a = 5;
+            // TODO:
         }
-    }
-
-    private bool Add(int key, out Slide value, Guid guid)
-    {
-        Log.Debug("IMPOSTER_SERVICE", $"Thread Id: {Thread.CurrentThread.ManagedThreadId}; Key: {key}; DateTime: {DateTime.Now}; Guid: {guid}");
-        return _speakerSlides.TryGetValue(key, out value);
     }
 
     private async Task<string> DownloadAndSaveSlide(Uri url, int page, CancellationToken cancellationToken)

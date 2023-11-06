@@ -2,9 +2,9 @@
 
 namespace ProximitySlides.App.Pages;
 
-public partial class ListenerDetailsPage : ContentPage
+public partial class PresentationPage : ContentPage
 {
-    public ListenerDetailsPage(ListenerDetailsViewModel viewModel)
+    public PresentationPage(PresentationViewModel viewModel)
     {
         InitializeComponent();
         BindingContext = viewModel;

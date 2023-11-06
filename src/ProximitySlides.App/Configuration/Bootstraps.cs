@@ -23,7 +23,7 @@ public static class Bootstraps
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<SpeakerViewModel>();
         services.AddSingleton<ListenerViewModel>();
-        services.AddSingleton<ListenerDetailsViewModel>();
+        services.AddSingleton<PresentationViewModel>();
         services.AddSingleton<TestViewModel>();
 
         services.AddSingleton<ISlideListener, SlideListener>();
@@ -39,7 +39,7 @@ public static class Bootstraps
         // pages that are navigated to
         services.AddTransient<SpeakerPage>();
         services.AddTransient<ListenerPage>();
-        services.AddTransient<ListenerDetailsPage>();
+        services.AddTransient<PresentationPage>();
         services.AddTransient<TestPage>();
         
         return services;

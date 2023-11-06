@@ -49,7 +49,7 @@ public partial class ListenerViewModel : ObservableObject
     [RelayCommand]
     private async Task OnSelectedTagChanged(string speakerId)
     {
-        await Shell.Current.GoToAsync($"{nameof(ListenerDetailsPage)}?SpeakerId={speakerId}");
+        await Shell.Current.GoToAsync($"{nameof(PresentationPage)}?SpeakerId={speakerId}");
     }
 
     private void OnReceivedPackage(BlePackageMessage package)

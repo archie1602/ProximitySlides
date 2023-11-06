@@ -55,24 +55,117 @@ public partial class SpeakerViewModel : ObservableObject
         {
             try
             {
-                var slide = new SlideMessage
+                var slides = new Dictionary<int, SlideMessage>()
                 {
-                    Url = "https://drive.google.com/uc?id=1mD1o6Gac0jUvwcEcjguIqlZunzT7lZtg",
-                    CurrentSlide = 1,
-                    TotalSlides = 3
+                    {
+                        1,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1mD1o6Gac0jUvwcEcjguIqlZunzT7lZtg",
+                            CurrentSlide = 1,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        2,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1BdBzcPcW3xHCbBIWXIREktifrCbq38qZ",
+                            CurrentSlide = 2,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        3,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1BqBH4hOOduJikMBcYMEXfF0OAVuOVwP5",
+                            CurrentSlide = 3,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        4,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1TV1Uix-79XurvlgDMDRw3M9mPhtD_sMb",
+                            CurrentSlide = 4,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        5,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1ayp4rUjKzCvpUwPbsmpJOOnl6X06dMtu",
+                            CurrentSlide = 5,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        6,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1yRICv0HkVXD235eh889j-j3gTVaIQIkf",
+                            CurrentSlide = 6,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        7,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=134uqQUQsLodebB4pqn1cdVHVzy_0aOw5",
+                            CurrentSlide = 7,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        8,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=18WzIZ1BTAtaqCRMYWJCLgHKI78CYQVgB",
+                            CurrentSlide = 8,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        9,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1B0AWS_OJ-Y10tK0YX86EH4A1I3xrKzI1",
+                            CurrentSlide = 9,
+                            TotalSlides = 10
+                        }
+                    },
+                    {
+                        10,
+                        new SlideMessage 
+                        { 
+                            Url = "https://drive.google.com/uc?id=1bsd5FjK9woIC9JFeIIQsU3OI_dbCAWuc",
+                            CurrentSlide = 10,
+                            TotalSlides = 10
+                        }
+                    }
                 };
-
-                var slideJson = JsonSerializer.Serialize(slide);
-                var slideJsonCompress = slideJson.CompressJson();
-
-                var speakerId = _proximitySender.GenerateSenderIdentifier();
+                
+                // var slide = new SlideMessage
+                // {
+                //     Url = "https://drive.google.com/uc?id=1mD1o6Gac0jUvwcEcjguIqlZunzT7lZtg",
+                //     CurrentSlide = 1,
+                //     TotalSlides = 3
+                // };
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    var dataBytes = Encoding.ASCII.GetBytes(slideJsonCompress);
-
-                    await _proximitySender.SendMessage(_appSettings.AppAdvertiserId, speakerId, dataBytes, CancellationToken.None);
-                    await Task.Delay(TimeSpan.FromMilliseconds(BroadcastPeriodBetweenCircles), CancellationToken.None);
+                    foreach (var s in slides.Values)
+                    {
+                        for(var i = 0; i < 5; i++)
+                        {
+                            await SendSlide(s);
+                            // await Task.Delay(TimeSpan.FromMilliseconds(300));
+                        }
+                    }
                 }
             }
             catch(Exception ex)
@@ -81,6 +174,22 @@ public partial class SpeakerViewModel : ObservableObject
                 var abc = 5;
             }
         });
+    }
+
+    private async Task SendSlide(SlideMessage s)
+    {
+        var slideJson = JsonSerializer.Serialize(s);
+        var slideJsonCompress = slideJson.CompressJson();
+
+        var speakerId = _proximitySender.GenerateSenderIdentifier();
+
+        var dataBytes = Encoding.ASCII.GetBytes(slideJsonCompress);
+
+        await _proximitySender.SendMessage(_appSettings.AppAdvertiserId, speakerId, dataBytes,
+            CancellationToken.None);
+
+        await Task.Delay(TimeSpan.FromMilliseconds(BroadcastPeriodBetweenCircles),
+            CancellationToken.None);
     }
 
     [RelayCommand]
