@@ -16,7 +16,7 @@ public class SlideListener : ISlideListener
     private readonly ICollection<BlePackageMessage> _speakerSlides;
     private readonly ConcurrentQueue<BlePackageMessage> _handlersQueue;
     
-    private Action<SlideDto>? _onListenResultHandler;
+    private Func<SlideDto, Task>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
     
     private Task? _queueWorkerTask;
@@ -103,7 +103,7 @@ public class SlideListener : ISlideListener
                     continue;
                 }
             
-                InvokeHandler(slideMsg);
+                await InvokeHandler(slideMsg);
             }
             catch (Exception e)
             {
@@ -144,14 +144,17 @@ public class SlideListener : ISlideListener
         _speakerSlides.Add(package);
     }
     
-    private void InvokeHandler(SlideMessage slideMsg)
+    private async Task InvokeHandler(SlideMessage slideMsg)
     {
-        _onListenResultHandler?.Invoke(new SlideDto
+        await MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            Url = new Uri(slideMsg.Url),
-            CurrentSlide = slideMsg.CurrentSlide,
-            TotalSlides = slideMsg.TotalSlides,
-            TimeToDeliver = _speakerSlides.Max(it => it.ReceivedAt) - _speakerSlides.Min(it => it.ReceivedAt)
+            await _onListenResultHandler?.Invoke(new SlideDto
+            {
+                Url = new Uri(slideMsg.Url),
+                CurrentSlide = slideMsg.CurrentSlide,
+                TotalSlides = slideMsg.TotalSlides,
+                TimeToDeliver = _speakerSlides.Max(it => it.ReceivedAt) - _speakerSlides.Min(it => it.ReceivedAt)
+            });
         });
 
         _speakerSlides.Clear();
@@ -180,7 +183,7 @@ public class SlideListener : ISlideListener
     public void StartListenSlides(
         string appId,
         SpeakerIdentifier speakerIdentifier,
-        Action<SlideDto>? listenResultCallback,
+        Func<SlideDto, Task>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback)
     {
         _speakerSlides.Clear();

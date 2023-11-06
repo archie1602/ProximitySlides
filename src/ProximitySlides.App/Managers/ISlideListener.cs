@@ -5,7 +5,7 @@ public interface ISlideListener
     void StartListenSlides(
         string appId,
         SpeakerIdentifier speakerIdentifier,
-        Action<SlideDto>? listenResultCallback,
+        Func<SlideDto, Task>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback);
     
     void StopListen();

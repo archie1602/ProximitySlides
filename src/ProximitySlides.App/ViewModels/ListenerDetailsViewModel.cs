@@ -121,7 +121,7 @@ public partial class ListenerDetailsViewModel : ObservableObject
     private static async Task DefaultRoute(HttpContextBase ctx) =>
         await ctx.Response.Send($"Hello from default route: {ctx.Request.Url.RawWithQuery}");
     
-    private async void OnReceivedSlide(SlideDto slideDto)
+    private async Task OnReceivedSlide(SlideDto slideDto)
     {
         bool b;
         Slide existingSlideTmp;
@@ -138,11 +138,8 @@ public partial class ListenerDetailsViewModel : ObservableObject
 
             if (b)
             {
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    // set current slide to display
-                    SetCurrentSlide(existingSlide);
-                });
+                // set current slide to display
+                SetCurrentSlide(existingSlide);
 
                 return;
             }
@@ -170,11 +167,8 @@ public partial class ListenerDetailsViewModel : ObservableObject
 
             _speakerSlides.Add(slideDto.CurrentSlide, newSlide);
             
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
-                // set current slide to display
-                SetCurrentSlide(newSlide);
-            });
+            // set current slide to display
+            SetCurrentSlide(newSlide);
 
             // IDEA:
 
