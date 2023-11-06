@@ -120,18 +120,9 @@ public partial class ListenerDetailsViewModel : ObservableObject
 
     private static async Task DefaultRoute(HttpContextBase ctx) =>
         await ctx.Response.Send($"Hello from default route: {ctx.Request.Url.RawWithQuery}");
-
+    
     private async void OnReceivedSlide(SlideDto slideDto)
     {
-        // var guid = Guid.NewGuid();
-        //
-        // for (var i = 0; i < 1000; i++)
-        // {
-        //     Log.Debug("MY_SERVICE", $"{guid.ToString()}: {i}");
-        // }
-        //
-        // return;
-
         bool b;
         Slide existingSlideTmp;
 
@@ -147,20 +138,17 @@ public partial class ListenerDetailsViewModel : ObservableObject
 
             if (b)
             {
-                // set current slide to display
-                SetCurrentSlide(existingSlide);
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    // set current slide to display
+                    SetCurrentSlide(existingSlide);
+                });
 
                 return;
             }
 
-            var pathToSlideFile =
-            Task.Run(async () =>
-            {
-                var pathToSlideFile =
-                DownloadAndSaveSlide(slideDto.Url, slideDto.CurrentSlide, CancellationToken.None);
-
-                return await pathToSlideFile;
-            }).Result;
+            var pathToSlideFile = 
+                await DownloadAndSaveSlide(slideDto.Url, slideDto.CurrentSlide, CancellationToken.None);
 
             var fileName = Path.GetFileName(pathToSlideFile);
 
@@ -181,8 +169,12 @@ public partial class ListenerDetailsViewModel : ObservableObject
             };
 
             _speakerSlides.Add(slideDto.CurrentSlide, newSlide);
-
-            SetCurrentSlide(newSlide);
+            
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                // set current slide to display
+                SetCurrentSlide(newSlide);
+            });
 
             // IDEA:
 

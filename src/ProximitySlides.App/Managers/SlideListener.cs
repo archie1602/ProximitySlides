@@ -14,9 +14,13 @@ public class SlideListener : ISlideListener
     private readonly ILogger<SlideListener> _logger;
     private readonly IProximityListener _proximityListener;
     private readonly ICollection<BlePackageMessage> _speakerSlides;
+    private readonly ConcurrentQueue<BlePackageMessage> _handlersQueue;
     
     private Action<SlideDto>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
+    
+    private Task? _queueWorkerTask;
+    private CancellationTokenSource _queueWorkerCts;
     
     public SlideListener(
         ILogger<SlideListener> logger,
@@ -26,58 +30,14 @@ public class SlideListener : ISlideListener
         _proximityListener = proximityListener;
         // TODO: add equality comparator
         _speakerSlides = new ConcurrentHashSet<BlePackageMessage>(new BlePackageEqualityComparer());
+        _handlersQueue = new ConcurrentQueue<BlePackageMessage>();
+
+        _queueWorkerCts = new CancellationTokenSource();
     }
 
     private void OnScanResult(BlePackageMessage package)
     {
-        try
-        {
-            var tmpPackage = _speakerSlides
-                .FirstOrDefault(it => it.CurrentPage == package.CurrentPage);
-
-            if (tmpPackage is not null)
-            {
-                TryUpdateExistingPackage(package, tmpPackage);
-                return;
-            }
-            
-            _speakerSlides.Add(package);
-            
-            var isAllTotalPagesEqual = _speakerSlides
-                .Select(it => it.TotalPages)
-                .Distinct()
-                .Count() == 1;
-
-            if (!isAllTotalPagesEqual)
-            {
-                // TODO: skip all and start again...
-                _speakerSlides.Clear();
-                _speakerSlides.Add(package);
-                return;
-            }
-
-            if (_speakerSlides.Count != package.TotalPages)
-            {
-                return;
-            }
-            
-            var slideMsg = TryDeserializeSlideMessage();
-
-            if (slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
-            {
-                // TODO: add log
-                return;
-            }
-            
-            InvokeHandler(slideMsg);
-        }
-        catch (Exception e)
-        {
-            // TODO: add log
-            
-            // TODO: clear нужно делать в случае, если упали на десериализации
-            _speakerSlides.Clear();
-        }
+        _handlersQueue.Enqueue(package);
     }
 
     private void OnScanFailed(ListenFailed errorCode)
@@ -90,6 +50,68 @@ public class SlideListener : ISlideListener
         catch (Exception e)
         {
             // TODO: add log
+        }
+    }
+    
+    private async Task HandleMessage()
+    {
+        while (!_queueWorkerCts.Token.IsCancellationRequested)
+        {
+            if (!_handlersQueue.TryDequeue(out var package))
+            {
+                // TODO: move to config
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                continue;
+            }
+            
+            try
+            {
+                var tmpPackage = _speakerSlides
+                    .FirstOrDefault(it => it.CurrentPage == package.CurrentPage);
+
+                if (tmpPackage is not null)
+                {
+                    TryUpdateExistingPackage(package, tmpPackage);
+                    continue;
+                }
+            
+                _speakerSlides.Add(package);
+            
+                var isAllTotalPagesEqual = _speakerSlides
+                    .Select(it => it.TotalPages)
+                    .Distinct()
+                    .Count() == 1;
+
+                if (!isAllTotalPagesEqual)
+                {
+                    // TODO: skip all and start again...
+                    _speakerSlides.Clear();
+                    _speakerSlides.Add(package);
+                    continue;
+                }
+
+                if (_speakerSlides.Count != package.TotalPages)
+                {
+                    continue;
+                }
+            
+                var slideMsg = TryDeserializeSlideMessage();
+
+                if (slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
+                {
+                    // TODO: add log
+                    continue;
+                }
+            
+                InvokeHandler(slideMsg);
+            }
+            catch (Exception e)
+            {
+                // TODO: add log
+            
+                // TODO: clear нужно делать в случае, если упали на десериализации
+                _speakerSlides.Clear();
+            }
         }
     }
     
@@ -162,9 +184,13 @@ public class SlideListener : ISlideListener
         Action<ListenFailed>? listenFailedCallback)
     {
         _speakerSlides.Clear();
+        _handlersQueue.Clear();
         
         _onListenResultHandler = listenResultCallback;
         _onListenFailedHandler = listenFailedCallback;
+        
+        _queueWorkerCts = new CancellationTokenSource();
+        _queueWorkerTask = Task.Run(HandleMessage, _queueWorkerCts.Token);
         
         _proximityListener.StartListenSpeaker(
             appId: appId,
@@ -176,7 +202,11 @@ public class SlideListener : ISlideListener
     public void StopListen()
     {
         _proximityListener.StopListen();
+        
+        _queueWorkerCts.Cancel();
+        
         _speakerSlides.Clear();
+        _handlersQueue.Clear();
         
         _onListenResultHandler = null;
         _onListenFailedHandler = null;
