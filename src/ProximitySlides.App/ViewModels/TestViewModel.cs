@@ -33,12 +33,12 @@ public partial class TestViewModel : ObservableObject
 
         _server.Start();
 
-        for (var i = 2; i <= 20; i++)
-        {
-            PathToPdf = $"http://127.0.0.1:9000/pdfjs/index.html?file=./assets/Introduction_to_Hadoop_slides.pdf&page={i}";
+        //for (var i = 2; i <= 20; i++)
+        //{
+        //    PathToPdf = $"http://127.0.0.1:9000/pdfjs/index.html?file=./assets/Introduction_to_Hadoop_slides.pdf&page={i}";
 
-            await Task.Delay(TimeSpan.FromSeconds(2));
-        }
+        //    await Task.Delay(TimeSpan.FromSeconds(2));
+        //}
     }
 
     [RelayCommand]

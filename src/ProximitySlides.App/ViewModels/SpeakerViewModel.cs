@@ -57,7 +57,7 @@ public partial class SpeakerViewModel : ObservableObject
             {
                 var slide = new SlideMessage
                 {
-                    Url = "https://i.ibb.co/9NB3WKM/presentation-slide-8.jpg",
+                    Url = "https://drive.google.com/uc?id=1mD1o6Gac0jUvwcEcjguIqlZunzT7lZtg",
                     CurrentSlide = 1,
                     TotalSlides = 3
                 };
