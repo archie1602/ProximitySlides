@@ -26,8 +26,6 @@ public partial class PresentationViewModel : ObservableObject
     private CancellationTokenSource _checkSpeakerActivityCts;
 
     private readonly WebserverLite _server;
-    private readonly Uri _pdfViewerWebServerUrl;
-
     private readonly HttpClient _httpClient;
 
     private string _speakerDirectoryName;
@@ -41,8 +39,6 @@ public partial class PresentationViewModel : ObservableObject
         _logger = logger;
         _slideListener = slideListener;
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
-        var presentationSettings = configuration.GetConfigurationSettings<PresentationSettings>();
-        
         _httpClient = new HttpClient();
 
         _lock = new object();
@@ -50,25 +46,9 @@ public partial class PresentationViewModel : ObservableObject
 
         _checkSpeakerActivityCts = new CancellationTokenSource();
 
-        // setup web server
-
-        var settings = new WebserverSettings(
-            hostname: presentationSettings.PdfViewerWebServer.Hostname,
-            port: presentationSettings.PdfViewerWebServer.Port);
-
-        _pdfViewerWebServerUrl = new Uri($"http://{presentationSettings.PdfViewerWebServer.Hostname}:{presentationSettings.PdfViewerWebServer.Port}");
-        
-        _server = new WebserverLite(settings, DefaultRoute);
-
-        _server.Routes.PreAuthentication.Content.BaseDirectory = FileSystem.Current.AppDataDirectory;
-
-        _server.Routes.PreAuthentication.Content.Add(
-            "/pdfjs/",
-            true);
-
-        _server.Routes.PreAuthentication.Content.Add(
-            $"/{BaseSpeakersDirectoryName}/",
-            true);
+        _server = WebserverHelper.BuildPdfViewerWebserver(_appSettings.PdfViewerWebServer.Hostname, _appSettings.PdfViewerWebServer.Port);
+        _server.Routes.PreAuthentication.Content.Add("/pdfjs/", true);
+        _server.Routes.PreAuthentication.Content.Add($"/{BaseSpeakersDirectoryName}/", true);
     }
 
     [ObservableProperty] private int _currentSlidePage;
@@ -161,7 +141,7 @@ public partial class PresentationViewModel : ObservableObject
     {
         CurrentSlide = existingSlide;
         CurrentSlidePage = existingSlide.CurrentSlide;
-        SlideRenderSource = $"{_pdfViewerWebServerUrl.AbsoluteUri}pdfjs/index.html?" +
+        SlideRenderSource = $"{_server.Settings.Prefix}pdfjs/index.html?" +
                             $"file=/{existingSlide.Storage.BaseSpeakersDirectory}/" +
                             $"{existingSlide.Storage.BaseCurrentSpeakerDirectory}/" +
                             $"{existingSlide.Storage.FileName}";
@@ -228,7 +208,10 @@ public partial class PresentationViewModel : ObservableObject
             }
 
             // start web server
-            _server.Start();
+            if (!_server.IsListening)
+            {
+                _server.Start();
+            }
 
             // start listen for slides
             var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
@@ -259,7 +242,10 @@ public partial class PresentationViewModel : ObservableObject
     {
         try
         {
-            _server.Stop();
+            if (_server.IsListening)
+            {
+                _server.Stop();
+            }
 
             _slideListener.StopListen();
             

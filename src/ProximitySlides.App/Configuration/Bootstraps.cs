@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Pages;
@@ -8,7 +9,7 @@ namespace ProximitySlides.App.Configuration;
 
 public static class Bootstraps
 {
-    [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
+    [UsedImplicitly]
     public static IServiceCollection AddApp(this IServiceCollection services, IConfiguration configuration)
     {
         //services.Configure<ListenerSettings>(_ => configuration.GetSection(ListenerSettings.SectionName).Get<ListenerSettings>());

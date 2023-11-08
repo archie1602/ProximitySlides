@@ -5,9 +5,11 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
+using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Speakers;
 using ProximitySlides.Core.Extensions;
+using WatsonWebserver.Lite;
 
 namespace ProximitySlides.App.ViewModels;
 
@@ -31,8 +33,10 @@ public partial class SpeakerViewModel : ObservableObject
     private readonly IProximitySender _proximitySender;
     private readonly AppSettings _appSettings;
 
-    private Task _broadcastingTask = null;
-    private CancellationTokenSource _cancelTokenSource = new();
+    private readonly WebserverLite _server;
+    
+    private Task? _broadcastingSlidesTask;
+    private CancellationTokenSource? _broadcastingSlidesCts;
 
     public SpeakerViewModel(
         ILogger<SpeakerViewModel> logger,
@@ -43,15 +47,36 @@ public partial class SpeakerViewModel : ObservableObject
         _proximitySender = proximitySender;
         
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
+        _server = WebserverHelper.BuildPdfViewerWebserver(_appSettings.PdfViewerWebServer.Hostname, _appSettings.PdfViewerWebServer.Port);
+        _server.Routes.PreAuthentication.Content.Add("/pdfjs/", true);
     }
+    
+    [ObservableProperty]
+    private string _slideRenderSource = null!;
 
     [RelayCommand]
     private void OnAppearing()
     {
-        _cancelTokenSource = new CancellationTokenSource();
-        var cancellationToken = _cancelTokenSource.Token;
+        try
+        {
+            if (!_server.IsListening)
+            {
+                _server.Start();
+                SlideRenderSource = $"{_server.Settings.Prefix}pdfjs/index.html?" +
+                                    $"file=/pdfjs/assets/Introduction_to_Hadoop_slides.pdf";
+            }
+        }
+        catch (Exception e)
+        {
+            // TODO:
+        }
         
-        _broadcastingTask = Task.Run(async () =>
+        return;
+        
+        _broadcastingSlidesCts = new CancellationTokenSource();
+        var cancellationToken = _broadcastingSlidesCts.Token;
+        
+        _broadcastingSlidesTask = Task.Run(async () =>
         {
             try
             {
@@ -191,11 +216,33 @@ public partial class SpeakerViewModel : ObservableObject
         await Task.Delay(TimeSpan.FromMilliseconds(BroadcastPeriodBetweenCircles),
             CancellationToken.None);
     }
-
+    
     [RelayCommand]
-    private void OnDisappearing()
+    private async Task OnBackButtonClicked()
     {
-        _cancelTokenSource.Cancel();
+        await Release();
+        await Shell.Current.Navigation.PopAsync();
+    }
+
+    private async Task Release()
+    {
+        try
+        {
+            if (_server.IsListening)
+            {
+                _server.Stop();
+            }
+        
+            if (_broadcastingSlidesCts is not null && _broadcastingSlidesTask is not null)
+            {
+                _broadcastingSlidesCts.Cancel();
+                await _broadcastingSlidesTask;
+            }
+        }
+        catch (Exception e)
+        {
+            // TODO:
+        }
     }
 
     [RelayCommand]

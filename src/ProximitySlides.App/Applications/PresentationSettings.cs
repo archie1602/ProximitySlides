@@ -6,6 +6,4 @@ namespace ProximitySlides.App.Applications;
 public class PresentationSettings : IBaseSettings
 {
     public string SectionName => "Presentation";
-
-    public PdfViewerWebServerSettings PdfViewerWebServer { get; set; } = null!;
 }

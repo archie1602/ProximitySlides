@@ -10,38 +10,132 @@
         <toolkit:EventToCommandBehavior
             EventName="Appearing"
             Command="{Binding AppearingCommand}"/>
-        
-        <toolkit:EventToCommandBehavior
-            EventName="Disappearing"
-            Command="{Binding DisappearingCommand}"/>
     </ContentPage.Behaviors>
     
-    <Grid RowDefinitions="50, Auto, *"
-          ColumnDefinitions=".75*, .25*">
-        
-        <Label Text="Speaker page"
-               FontSize="22"
-               Grid.ColumnSpan="2"
-               BackgroundColor="Aqua"
-               HorizontalTextAlignment="Center"
-               VerticalTextAlignment="Center"/>
-        
-        <Entry Placeholder="Enter link"
-               Text="{Binding Link}"
-               Grid.Row="1"
-               BackgroundColor="Green"/>
-        
-        <Switch IsToggled="{Binding IsBroadcastingToggled}"
-                Grid.Row="1"
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding BackButtonClickedCommand}"></BackButtonBehavior>
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="50, 300, Auto, *"
+          ColumnDefinitions=".25*, .50*, .25*">
+
+        <Grid Grid.ColumnSpan="3"
+              ColumnDefinitions=".50*, .50*">
+            <Label
+                Padding="10, 0, 0, 0"
+               FontSize="20"
+                HorizontalTextAlignment="Start"
+                VerticalTextAlignment="Center"
+               Text="Id: AB"/>
+
+            <Label
+                Padding="0, 0, 10, 0"
                 Grid.Column="1"
-                BackgroundColor="Red">
-            <Switch.Behaviors>
-                <toolkit:EventToCommandBehavior
-                    x:TypeArguments="ToggledEventArgs"
-                    EventName="Toggled"
-                    Command="{Binding BroadcastingToggledCommand}"/>
-            </Switch.Behaviors>
-        </Switch>
+               FontSize="20"
+                HorizontalTextAlignment="End"
+                VerticalTextAlignment="Center"
+               Text="Page: 1/10"/>
+        </Grid>
+
+        <!--<HorizontalStackLayout Grid.ColumnSpan="3" BackgroundColor="IndianRed">
+            <Label
+               FontSize="20"
+                HorizontalTextAlignment="Start"
+                VerticalTextAlignment="Center"
+               Text="Speaker id: AB"/>
+
+            <Label
+               FontSize="20"
+                HorizontalTextAlignment="End"
+                VerticalTextAlignment="Center"
+               BackgroundColor="Green"
+               Text="Page: 1/10"/>
+        </HorizontalStackLayout>-->
+
+        <!--<HorizontalStackLayout BackgroundColor="IndianRed">
+            <Label
+               FontSize="20"
+                HorizontalTextAlignment="Start"
+                VerticalTextAlignment="Center"
+               Text="Speaker id: AB"/>
+        </HorizontalStackLayout>
+
+        <HorizontalStackLayout BackgroundColor="LawnGreen">
+
+            <Label
+               FontSize="20"
+                HorizontalTextAlignment="End"
+                VerticalTextAlignment="Center"
+               BackgroundColor="Green"
+               Text="Page: 1/10"/>
+        </HorizontalStackLayout>-->
+
+        <!--<Label Grid.Column="0"
+               FontSize="20"
+                HorizontalTextAlignment="Start"
+                VerticalTextAlignment="Center"
+               Text="Speaker id: AB"/>
+
+        <Label Grid.Column="2"
+               FontSize="20"
+                HorizontalTextAlignment="End"
+                VerticalTextAlignment="Center"
+               BackgroundColor="Green"
+               Text="Page: 1/10"/>-->
+
+        <WebView Grid.Row="1" 
+                Grid.ColumnSpan="3"
+                 Source="{Binding SlideRenderSource}">
+        </WebView>
+
+        <ImageButton Grid.Row="2"
+                     Source="navigation_left_arrow.png"
+                     WidthRequest="50"
+                     HeightRequest="50"
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center" />
+
+         <Button Grid.Row="2"
+                 Grid.Column="1"
+                 WidthRequest="200" 
+                 HeightRequest="50" 
+                 Text="Start"
+                 FontSize="20"
+                 FontAttributes="Bold"
+                 BackgroundColor="DarkSeaGreen"/> 
+
+        <ImageButton Grid.Row="2"
+                     Grid.Column="2"
+                     Source="navigation_right_arrow.png"
+                     WidthRequest="50"
+                     HeightRequest="50"
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center" />
+
+
+        <!-- <Label Text="Speaker page" -->
+        <!--        FontSize="22" -->
+        <!--        Grid.ColumnSpan="2" -->
+        <!--        BackgroundColor="Aqua" -->
+        <!--        HorizontalTextAlignment="Center" -->
+        <!--        VerticalTextAlignment="Center"/> -->
+        
+        <!-- <Entry Placeholder="Enter link" -->
+        <!--        Text="{Binding Link}" -->
+        <!--        Grid.Row="1" -->
+        <!--        BackgroundColor="Green"/> -->
+        
+        <!-- <Switch IsToggled="{Binding IsBroadcastingToggled}" -->
+        <!--         Grid.Row="1" -->
+        <!--         Grid.Column="1" -->
+        <!--         BackgroundColor="Red"> -->
+        <!--     <Switch.Behaviors> -->
+        <!--         <toolkit:EventToCommandBehavior -->
+        <!--             x:TypeArguments="ToggledEventArgs" -->
+        <!--             EventName="Toggled" -->
+        <!--             Command="{Binding BroadcastingToggledCommand}"/> -->
+        <!--     </Switch.Behaviors> -->
+        <!-- </Switch> -->
         
     </Grid>
     

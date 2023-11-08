@@ -8,4 +8,5 @@ public class AppSettings : IBaseSettings
     public string SectionName => "App";
     
     public string AppAdvertiserId { get; set; } = null!;
+    public PdfViewerWebServerSettings PdfViewerWebServer { get; set; } = null!;
 }
