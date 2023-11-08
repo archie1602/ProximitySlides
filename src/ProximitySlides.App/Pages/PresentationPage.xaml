@@ -11,14 +11,10 @@
         <toolkit:EventToCommandBehavior
             EventName="Appearing"
             Command="{Binding AppearingCommand}"/>
-        
-        <toolkit:EventToCommandBehavior
-            EventName="Disappearing"
-            Command="{Binding DisappearingCommand}"/>
     </ContentPage.Behaviors>
     
     <Shell.BackButtonBehavior>
-        <BackButtonBehavior Command="{Binding GoBackCommand}"></BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding BackButtonClickedCommand}"></BackButtonBehavior>
     </Shell.BackButtonBehavior>
 
     <Grid RowDefinitions="50, 300, Auto"

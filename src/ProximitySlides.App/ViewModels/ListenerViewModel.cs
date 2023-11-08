@@ -45,13 +45,7 @@ public partial class ListenerViewModel : ObservableObject
         _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
         Speakers = new ObservableCollection<string>();
     }
-
-    [RelayCommand]
-    private async Task OnSelectedTagChanged(string speakerId)
-    {
-        await Shell.Current.GoToAsync($"{nameof(PresentationPage)}?SpeakerId={speakerId}");
-    }
-
+    
     private void OnReceivedPackage(BlePackageMessage package)
     {
         lock (_lock)
@@ -180,18 +174,39 @@ public partial class ListenerViewModel : ObservableObject
                 $"An error occurred when starting the listen: {ex.Message}", "OK");
         }
     }
-
+    
     [RelayCommand]
-    private void OnDisappearing()
+    private async Task OnBackButtonClicked()
+    {
+        await Release();
+        await Shell.Current.Navigation.PopAsync();
+    }
+    
+    [RelayCommand]
+    private async Task OnSelectedTagChanged(string speakerId)
+    {
+        await Release();
+        await Shell.Current.GoToAsync($"{nameof(PresentationPage)}?SpeakerId={speakerId}");
+    }
+    
+    private async Task Release()
     {
         try
         {
             _proximityListener.StopListen();
             
-            _clearInactiveSpeakersCts.Cancel();
-            // _clearInactiveSpeakersTask?.GetAwaiter().GetResult();
+            if (_clearInactiveSpeakersTask is not null)
+            {
+                _clearInactiveSpeakersCts.Cancel();
+                await _clearInactiveSpeakersTask;
+            }
+
+            if (_updateUiSpeakersListTask is not null)
+            {
+                _updateUiSpeakersListCts.Cancel();
+                await _updateUiSpeakersListTask;
+            }
             
-            _updateUiSpeakersListCts.Cancel();
             _speakersPackages.Clear(); 
             Speakers.Clear();
         }

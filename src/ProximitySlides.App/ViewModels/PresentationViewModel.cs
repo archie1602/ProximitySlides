@@ -18,7 +18,6 @@ public partial class PresentationViewModel : ObservableObject
     private readonly ILogger<PresentationViewModel> _logger;
     private readonly ISlideListener _slideListener;
     private readonly AppSettings _appSettings;
-    private readonly PresentationSettings _presentationSettings;
 
     private readonly object _lock;
     private readonly IDictionary<int, Slide> _speakerSlides;
@@ -42,7 +41,7 @@ public partial class PresentationViewModel : ObservableObject
         _logger = logger;
         _slideListener = slideListener;
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
-        _presentationSettings = configuration.GetConfigurationSettings<PresentationSettings>();
+        var presentationSettings = configuration.GetConfigurationSettings<PresentationSettings>();
         
         _httpClient = new HttpClient();
 
@@ -54,10 +53,10 @@ public partial class PresentationViewModel : ObservableObject
         // setup web server
 
         var settings = new WebserverSettings(
-            hostname: _presentationSettings.PdfViewerWebServer.Hostname,
-            port: _presentationSettings.PdfViewerWebServer.Port);
+            hostname: presentationSettings.PdfViewerWebServer.Hostname,
+            port: presentationSettings.PdfViewerWebServer.Port);
 
-        _pdfViewerWebServerUrl = new Uri($"http://{_presentationSettings.PdfViewerWebServer.Hostname}:{_presentationSettings.PdfViewerWebServer.Port}");
+        _pdfViewerWebServerUrl = new Uri($"http://{presentationSettings.PdfViewerWebServer.Hostname}:{presentationSettings.PdfViewerWebServer.Port}");
         
         _server = new WebserverLite(settings, DefaultRoute);
 
@@ -96,9 +95,7 @@ public partial class PresentationViewModel : ObservableObject
             
             if (_speakerSlides.TryGetValue(slideDto.CurrentSlide, out var existingSlide))
             {
-                // set current slide to display
                 SetCurrentSlide(existingSlide);
-
                 return;
             }
 
@@ -125,7 +122,6 @@ public partial class PresentationViewModel : ObservableObject
 
             _speakerSlides.Add(slideDto.CurrentSlide, newSlide);
             
-            // set current slide to display
             SetCurrentSlide(newSlide);
 
             // IDEA:
@@ -211,7 +207,7 @@ public partial class PresentationViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task OnAppearing()
+    private void OnAppearing()
     {
         try
         {
@@ -251,26 +247,25 @@ public partial class PresentationViewModel : ObservableObject
             // TODO:
         }
     }
-
-    [RelayCommand]
-    private async Task OnDisappearing()
-    {
-
-    }
     
     [RelayCommand]
-    private async Task GoBack()
+    private async Task OnBackButtonClicked()
+    {
+        await Release();
+        await Shell.Current.Navigation.PopAsync();
+    }
+
+    private async Task Release()
     {
         try
         {
             _server.Stop();
 
             _slideListener.StopListen();
-
-            _checkSpeakerActivityCts.Cancel();
-
+            
             if (_checkSpeakerActivityTask is not null)
             {
+                _checkSpeakerActivityCts.Cancel();
                 await _checkSpeakerActivityTask;
             }
             
@@ -279,7 +274,9 @@ public partial class PresentationViewModel : ObservableObject
         catch (Exception e)
         {
             // TODO: change log message
-            _logger.LogError(e, "Error occurred while trying to finish listening to speaker with id {SpeakerId}",
+            _logger.LogError(
+                e,
+                "Error occurred while trying to finish listening to speaker with id {SpeakerId}",
                 SpeakerId);
         }
         finally
@@ -289,10 +286,6 @@ public partial class PresentationViewModel : ObservableObject
             {
                 Directory.Delete(_speakerSlidesStoragePath, true);
             }
-
-            // TODO: тут проблема: OnAppearing у Listener вызывается быстрее чем отработает код
-            await Shell.Current.Navigation.PopAsync();
-            var a = 5;
         }
     }
 }

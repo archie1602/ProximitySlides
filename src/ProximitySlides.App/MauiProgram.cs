@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using CommunityToolkit.Maui;
+using MetroLog.MicrosoftExtensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Configuration;
@@ -24,6 +25,7 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
+        builder.Logging.AddTraceLogger(_ => { });
         builder.AddAppSettings();
 
 #if DEBUG
