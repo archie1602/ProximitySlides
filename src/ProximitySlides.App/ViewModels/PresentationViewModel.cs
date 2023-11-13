@@ -20,7 +20,7 @@ public partial class PresentationViewModel : ObservableObject
     private readonly AppSettings _appSettings;
 
     private readonly object _lock;
-    private readonly IDictionary<int, Slide> _speakerSlides;
+    private readonly IDictionary<int, ListenerSlide> _speakerSlides;
 
     private Task? _checkSpeakerActivityTask;
     private CancellationTokenSource _checkSpeakerActivityCts;
@@ -42,7 +42,7 @@ public partial class PresentationViewModel : ObservableObject
         _httpClient = new HttpClient();
 
         _lock = new object();
-        _speakerSlides = new ConcurrentDictionary<int, Slide>();
+        _speakerSlides = new ConcurrentDictionary<int, ListenerSlide>();
 
         _checkSpeakerActivityCts = new CancellationTokenSource();
 
@@ -53,7 +53,7 @@ public partial class PresentationViewModel : ObservableObject
 
     [ObservableProperty] private int _currentSlidePage;
 
-    [ObservableProperty] private Slide _currentSlide = null!;
+    [ObservableProperty] private ListenerSlide _currentSlide = null!;
 
     [ObservableProperty] private string _slideRenderSource = null!;
 
@@ -84,7 +84,7 @@ public partial class PresentationViewModel : ObservableObject
 
             var fileName = Path.GetFileName(pathToSlideFile);
 
-            var newSlide = new Slide
+            var newSlide = new ListenerSlide
             {
                 Url = slideDto.Url,
                 CurrentSlide = slideDto.CurrentSlide,
@@ -137,7 +137,7 @@ public partial class PresentationViewModel : ObservableObject
         return pathToFile;
     }
 
-    private void SetCurrentSlide(Slide existingSlide)
+    private void SetCurrentSlide(ListenerSlide existingSlide)
     {
         CurrentSlide = existingSlide;
         CurrentSlidePage = existingSlide.CurrentSlide;
