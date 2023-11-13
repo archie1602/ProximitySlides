@@ -509,6 +509,7 @@ public static class MauiProgram
         {
             // Copy the file to the AppDataDirectory
             using var outputStream = File.Create(targetFile);
+            
             await inputStream.CopyToAsync(outputStream);
         }
     }
