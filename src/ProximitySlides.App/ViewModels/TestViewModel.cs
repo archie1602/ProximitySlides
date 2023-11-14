@@ -7,43 +7,23 @@ namespace ProximitySlides.App.ViewModels;
 
 public partial class TestViewModel : ObservableObject
 {
-    private readonly WebserverLite _server;
-
     public TestViewModel()
     {
-        var settings = new WebserverSettings("127.0.0.1", 9000);
-        _server = new WebserverLite(settings, DefaultRoute);
         
-        _server.Routes.PreAuthentication.Content.BaseDirectory = FileSystem.Current.AppDataDirectory;
-
-        _server.Routes.PreAuthentication.Content.Add(
-            "/pdfjs/",
-            true);
     }
-
-    private static async Task DefaultRoute(HttpContextBase ctx) =>
-        await ctx.Response.Send($"Hello from default route: {ctx.Request.Url.RawWithQuery}");
-
-    [ObservableProperty] private string _pathToPdf = null!;
+    
+    [ObservableProperty] private ImageSource _activeSlide;
 
     [RelayCommand]
     private async Task OnAppearing()
     {
-        PathToPdf = $"http://127.0.0.1:9000/pdfjs/index.html?file=./assets/Introduction_to_Hadoop_slides.pdf";
-
-        _server.Start();
-
-        //for (var i = 2; i <= 20; i++)
-        //{
-        //    PathToPdf = $"http://127.0.0.1:9000/pdfjs/index.html?file=./assets/Introduction_to_Hadoop_slides.pdf&page={i}";
-
-        //    await Task.Delay(TimeSpan.FromSeconds(2));
-        //}
+        var pathToSlide = Path.Combine(FileSystem.Current.AppDataDirectory, "presentations", "2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9", "slides", "slide_2.png");
+        ActiveSlide = ImageSource.FromFile(pathToSlide);
     }
 
     [RelayCommand]
     private void OnDisappearing()
     {
-        _server.Stop();
+        
     }
 }

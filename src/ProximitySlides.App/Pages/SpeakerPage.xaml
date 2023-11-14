@@ -38,10 +38,9 @@
                 Text="{Binding SlideNavigationText}" />
         </Grid>
 
-        <WebView Grid.Row="1"
-                 Grid.ColumnSpan="3"
-                 Source="{Binding SlideRenderSource}">
-        </WebView>
+        <Image Grid.Row="1"
+               Grid.ColumnSpan="3"
+               Source="{Binding ActiveSlide}" />
 
         <ImageButton Grid.Row="2"
                      Source="navigation_left_arrow.png"
@@ -69,7 +68,7 @@
                      HorizontalOptions="Center"
                      VerticalOptions="Center"
                      Command="{Binding NextSlideClickedCommand}" />
-        
+
     </Grid>
 
 </ContentPage>

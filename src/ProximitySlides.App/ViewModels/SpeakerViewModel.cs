@@ -6,13 +6,11 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
-using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Speakers;
 using ProximitySlides.App.Mappers;
 using ProximitySlides.App.Models;
 using ProximitySlides.Core.Extensions;
-using WatsonWebserver.Lite;
 
 namespace ProximitySlides.App.ViewModels;
 
@@ -23,13 +21,15 @@ public partial class SpeakerViewModel : ObservableObject
     private readonly ILogger<SpeakerViewModel> _logger;
     private readonly IProximitySender _proximitySender;
     private readonly AppSettings _appSettings;
-
-    private readonly WebserverLite _server;
     
     private readonly IDictionary<int, SpeakerSlide> _slides;
     
     private Task? _broadcastingSlidesTask;
     private CancellationTokenSource? _broadcastingSlidesCts;
+
+    private event Action<int>? OnSlideSwitchedHandler;
+    private event Action? OnBroadcastingStartedHandler;
+    private event Action? OnBroadcastingStoppedHandler;
 
     public SpeakerViewModel(
         ILogger<SpeakerViewModel> logger,
@@ -42,13 +42,10 @@ public partial class SpeakerViewModel : ObservableObject
         _slides = new ConcurrentDictionary<int, SpeakerSlide>();
         
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
-        _server = WebserverHelper.BuildPdfViewerWebserver(_appSettings.PdfViewerWebServer.Hostname, _appSettings.PdfViewerWebServer.Port);
-        _server.Routes.PreAuthentication.Content.Add("/pdfjs/", true);
-        _server.Routes.PreAuthentication.Content.Add($"/{BaseBroadcastingDirectoryName}/", true);
     }
     
     [ObservableProperty]
-    private string _slideRenderSource = null!;
+    private ImageSource _activeSlide = null!;
     
     private int _currentSlidePage = 1;
     private int _totalSlidePages = 1;
@@ -67,9 +64,6 @@ public partial class SpeakerViewModel : ObservableObject
     
     [ObservableProperty]
     private Color _broadcastingButtonBgColor;
-    
-    private const string BaseBroadcastingDirectoryName = "speaker_broadcastings";
-    private const string CurrentBroadcastingDirectoryName = "ecc75f80-68a9-4a75-ac60-ce33b5b81eaf";
 
     private static Dictionary<int, SpeakerSlide> UploadSlides()
     {
@@ -83,7 +77,7 @@ public partial class SpeakerViewModel : ObservableObject
                 1,
                 new SpeakerSlide
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1mD1o6Gac0jUvwcEcjguIqlZunzT7lZtg"),
+                    Url = new Uri("https://drive.google.com/uc?id=1qaCK7zcZYCGrelBSuO26y5ExDSwIf6g-"),
                     CurrentSlide = 1,
                     TotalSlides = 10,
                     Storage = null
@@ -93,7 +87,7 @@ public partial class SpeakerViewModel : ObservableObject
                 2,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1BdBzcPcW3xHCbBIWXIREktifrCbq38qZ"),
+                    Url = new Uri("https://drive.google.com/uc?id=1cY_8eEsgmsiWtiyGUBFyvBqUwgdXCxc_"),
                     CurrentSlide = 2,
                     TotalSlides = 10,
                     Storage = null
@@ -103,7 +97,7 @@ public partial class SpeakerViewModel : ObservableObject
                 3,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1BqBH4hOOduJikMBcYMEXfF0OAVuOVwP5"),
+                    Url = new Uri("https://drive.google.com/uc?id=1HkVf0Bz6XPsZUvXSue24ygzDpQdjJ2Gf"),
                     CurrentSlide = 3,
                     TotalSlides = 10,
                     Storage = null
@@ -113,7 +107,7 @@ public partial class SpeakerViewModel : ObservableObject
                 4,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1TV1Uix-79XurvlgDMDRw3M9mPhtD_sMb"),
+                    Url = new Uri("https://drive.google.com/uc?id=1oFyjDPPcRly_GlvCuRy7vH4XV6EwQBwy"),
                     CurrentSlide = 4,
                     TotalSlides = 10,
                     Storage = null
@@ -123,7 +117,7 @@ public partial class SpeakerViewModel : ObservableObject
                 5,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1ayp4rUjKzCvpUwPbsmpJOOnl6X06dMtu"),
+                    Url = new Uri("https://drive.google.com/uc?id=10ndZlbwalDAEA9HjM6LN_7adFwZV56sv"),
                     CurrentSlide = 5,
                     TotalSlides = 10,
                     Storage = null
@@ -133,7 +127,7 @@ public partial class SpeakerViewModel : ObservableObject
                 6,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1yRICv0HkVXD235eh889j-j3gTVaIQIkf"),
+                    Url = new Uri("https://drive.google.com/uc?id=1YQupP3ww4OGI5SpOFM_rY4t8PNQ9JJgE"),
                     CurrentSlide = 6,
                     TotalSlides = 10,
                     Storage = null
@@ -143,7 +137,7 @@ public partial class SpeakerViewModel : ObservableObject
                 7,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=134uqQUQsLodebB4pqn1cdVHVzy_0aOw5"),
+                    Url = new Uri("https://drive.google.com/uc?id=1EJcp_NY1pvsxE4pBLwsrXpUnO1N7_bDj"),
                     CurrentSlide = 7,
                     TotalSlides = 10,
                     Storage = null
@@ -153,7 +147,7 @@ public partial class SpeakerViewModel : ObservableObject
                 8,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=18WzIZ1BTAtaqCRMYWJCLgHKI78CYQVgB"),
+                    Url = new Uri("https://drive.google.com/uc?id=1AuS9rVS1nNIqZ-8zf4bzQ6-xrvROE6Vc"),
                     CurrentSlide = 8,
                     TotalSlides = 10,
                     Storage = null
@@ -163,7 +157,7 @@ public partial class SpeakerViewModel : ObservableObject
                 9,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1B0AWS_OJ-Y10tK0YX86EH4A1I3xrKzI1"),
+                    Url = new Uri("https://drive.google.com/uc?id=1qOl5eYj_Vna78bXdXjvFK6xCwGuYJpJP"),
                     CurrentSlide = 9,
                     TotalSlides = 10,
                     Storage = null
@@ -173,7 +167,7 @@ public partial class SpeakerViewModel : ObservableObject
                 10,
                 new SpeakerSlide 
                 { 
-                    Url = new Uri("https://drive.google.com/uc?id=1bsd5FjK9woIC9JFeIIQsU3OI_dbCAWuc"),
+                    Url = new Uri("https://drive.google.com/uc?id=1RVAkkBfBiTa81TPrUvuqSJG9pRora--l"),
                     CurrentSlide = 10,
                     TotalSlides = 10,
                     Storage = null
@@ -181,58 +175,68 @@ public partial class SpeakerViewModel : ObservableObject
             }
         };
 
+        var i = 1;
+
+        foreach (var s in slides)
+        {
+            s.Value.Storage = new SlideStorage
+            {
+                FileName = $"slide_{i}",
+                BaseSpeakersDirectory = "presentations",
+                BaseCurrentSpeakerDirectory = "2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9",
+                AbsoluteStoragePath = $"/data/data/com.companyname.proximityslides.app/files/presentations/2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9/slides/slide_{i}.png",
+                RelativeStoragePath = $"presentations/2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9/slides/slide_{i++}.png"
+            };
+        }
+        
         return slides;
     }
 
-    private void SetSlidePage(int page)
+    private void SetActiveSlide(int page)
     {
         if (page < 1 || page > _totalSlidePages)
         {
             return;
         }
+
+        if (_slides.TryGetValue(page, out var currentSlide))
+        {
+            ActiveSlide = ImageSource.FromFile(currentSlide.Storage.AbsoluteStoragePath);
+            OnSlideSwitchedHandler?.Invoke(page);
+        }
         
-        _currentSlidePage = page;
-        SlideRenderSource = $"{_server.Settings.Prefix}pdfjs/index.html?" +
-                            $"file=/{BaseBroadcastingDirectoryName}/{CurrentBroadcastingDirectoryName}/Introduction_to_Hadoop_slides.pdf&" +
-                            $"page={page}";
-        SlideNavigationText = $"Page: {page}/{_totalSlidePages}";
+        // TODO: stop the whole process
+        // TODO: add log
+        // TODO: show error alert
     }
     
-    private void SetSlideViewerServer(bool enable)
+    private void SetActiveSlidePage(int page)
     {
-        if (enable)
-        {
-            _server.Start();
-            return;
-        }
-
-        _server.Stop();
-        _speakerId = null;
+        _currentSlidePage = page;
+        SlideNavigationText = $"Page: {page}/{_totalSlidePages}";
     }
 
-    private void SetSpeakerId(SpeakerIdentifier? speakerId = null)
+    private void SetSpeakerId()
     {
-        if (speakerId is null)
+        if (_isBroadcastingStart)
         {
-            _speakerId = null;
-            SpeakerIdText = "Id: NULL";
+            SpeakerIdText = $"Id: {_speakerId.SpeakerId}";
             return;
         }
         
-        _speakerId = speakerId;
-        SpeakerIdText = $"Id: {speakerId.SpeakerId}";
+        SpeakerIdText = "Id: NULL";
     }
 
-    private void SetBroadcastingButton(bool enable)
+    private void SetBroadcastingButton()
     {
-        if (enable)
+        if (_isBroadcastingStart)
         {
             BroadcastingButtonText = "Stop";
-            BroadcastingButtonBgColor = Color.FromRgb(220,20,60);
-            
+            BroadcastingButtonBgColor = Color.FromRgb(220, 20, 60);
+
             return;
         }
-        
+
         BroadcastingButtonText = "Start";
         BroadcastingButtonBgColor = Color.FromRgb(144, 238, 144);
     }
@@ -247,9 +251,9 @@ public partial class SpeakerViewModel : ObservableObject
                 return;
             }
             
-            var speakerId = _proximitySender.GenerateSenderIdentifier();
-            SetSpeakerId(speakerId);
-
+            // var speakerId = _proximitySender.GenerateSenderIdentifier();
+            // await MainThread.InvokeOnMainThreadAsync(() => OnBroadcastingStartedHandler?.Invoke(speakerId));
+            
             while (!_broadcastingSlidesCts.Token.IsCancellationRequested)
             {
                 if (!_slides.TryGetValue(_currentSlidePage, out var currentSlide))
@@ -259,19 +263,16 @@ public partial class SpeakerViewModel : ObservableObject
                 }
 
                 var slideMsg = SlideMapper.Map(currentSlide);
-                await SendSlide(slideMsg, speakerId);
+                await SendSlide(slideMsg, _speakerId);
 
                 // TODO: move to config
-                await Task.Delay(TimeSpan.FromMilliseconds(BroadcastPeriodBetweenCircles));
+                await Task.Delay(TimeSpan.FromMilliseconds(BroadcastPeriodBetweenCircles), _broadcastingSlidesCts.Token);
             }
         }
         catch (Exception e)
         {
             // TODO:
-        }
-        finally
-        {
-            SetSpeakerId();
+            var a = 5;
         }
     }
     
@@ -291,6 +292,7 @@ public partial class SpeakerViewModel : ObservableObject
     {
         try
         {
+            // init
             _slides.Clear();
 
             var slidesToAdd = UploadSlides();
@@ -302,13 +304,17 @@ public partial class SpeakerViewModel : ObservableObject
             
             _totalSlidePages = _slides.Count;
             
-            if (!_server.IsListening)
-            {
-                SetSlidePage(1);
-                SetSlideViewerServer(true);
-                SetSpeakerId();
-                SetBroadcastingButton(false);
-            }
+            // events
+            OnSlideSwitchedHandler += SetActiveSlidePage;
+            OnBroadcastingStartedHandler += SetSpeakerId;
+            OnBroadcastingStartedHandler += SetBroadcastingButton;
+            OnBroadcastingStoppedHandler += SetSpeakerId;
+            OnBroadcastingStoppedHandler += SetBroadcastingButton;
+            
+            // init starting
+            SetActiveSlide(1);
+            SetSpeakerId();
+            SetBroadcastingButton();
         }
         catch (Exception e)
         {
@@ -319,13 +325,13 @@ public partial class SpeakerViewModel : ObservableObject
     [RelayCommand]
     private void OnPrevSlideClicked()
     {
-        SetSlidePage(_currentSlidePage - 1);
+        SetActiveSlide(_currentSlidePage - 1);
     }
     
     [RelayCommand]
     private void OnNextSlideClicked()
     {
-        SetSlidePage(_currentSlidePage + 1);
+        SetActiveSlide(_currentSlidePage + 1);
     }
 
     [RelayCommand]
@@ -333,27 +339,11 @@ public partial class SpeakerViewModel : ObservableObject
     {
         if (_isBroadcastingStart)
         {
-            if (_broadcastingSlidesCts is not null && _broadcastingSlidesTask is not null)
-            {
-                _broadcastingSlidesCts.Cancel();
-                await _broadcastingSlidesTask;
-                
-                _broadcastingSlidesCts = null;
-                _broadcastingSlidesTask = null;
-                
-                _isBroadcastingStart = false;
-                
-                SetBroadcastingButton(false);
-            }
-
+            await StopBroadcasting();
             return;
         }
-        
-        _broadcastingSlidesCts = new CancellationTokenSource();
-        _broadcastingSlidesTask = Task.Run(BroadcastSlidesJob, _broadcastingSlidesCts.Token);
-        _isBroadcastingStart = true;
-        
-        SetBroadcastingButton(true);
+
+        StartBroadcasting();
     }
     
     [RelayCommand]
@@ -362,33 +352,51 @@ public partial class SpeakerViewModel : ObservableObject
         await Release();
         await Shell.Current.Navigation.PopAsync();
     }
-
+    
     private async Task Release()
     {
         try
-        {        
-            if (_broadcastingSlidesCts is not null && _broadcastingSlidesTask is not null)
-            {
-                _broadcastingSlidesCts.Cancel();
-                await _broadcastingSlidesTask;
-
-                _broadcastingSlidesCts = null;
-                _broadcastingSlidesTask = null;
-                
-                _isBroadcastingStart = false;
-                
-                SetBroadcastingButton(false);
-            }
-
-            if (_server.IsListening)
-            {
-                _slides.Clear();
-                SetSlideViewerServer(false);
-            }
+        {
+            await StopBroadcasting();
+            _slides.Clear();
+            
+            OnSlideSwitchedHandler -= SetActiveSlidePage;
+            OnBroadcastingStartedHandler -= SetSpeakerId;
+            OnBroadcastingStartedHandler -= SetBroadcastingButton;
+            OnBroadcastingStoppedHandler -= SetSpeakerId;
+            OnBroadcastingStoppedHandler -= SetBroadcastingButton;
         }
         catch (Exception e)
         {
             // TODO:
         }
+    }
+    
+    private void StartBroadcasting()
+    {
+        _speakerId = _proximitySender.GenerateSenderIdentifier();
+        
+        _broadcastingSlidesCts = new CancellationTokenSource();
+        _broadcastingSlidesTask = Task.Run(BroadcastSlidesJob, _broadcastingSlidesCts.Token);
+        
+        _isBroadcastingStart = true;
+        OnBroadcastingStartedHandler?.Invoke();
+    }
+    
+    private async Task StopBroadcasting()
+    {
+        _broadcastingSlidesCts?.Cancel();
+            
+        if (_broadcastingSlidesTask is not null)
+        {
+            await _broadcastingSlidesTask;
+        }
+
+        _broadcastingSlidesCts = null;
+        _broadcastingSlidesTask = null;
+
+        _isBroadcastingStart = false;
+
+        OnBroadcastingStoppedHandler?.Invoke();
     }
 }

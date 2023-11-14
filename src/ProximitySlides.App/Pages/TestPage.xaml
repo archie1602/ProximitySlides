@@ -10,16 +10,51 @@
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             EventName="Appearing"
-            Command="{Binding AppearingCommand}"/>
-        
+            Command="{Binding AppearingCommand}" />
+
         <toolkit:EventToCommandBehavior
             EventName="Disappearing"
-            Command="{Binding DisappearingCommand}"/>
+            Command="{Binding DisappearingCommand}" />
     </ContentPage.Behaviors>
-    
-    <WebView WidthRequest="300"
-             HeightRequest="300"
-             Source="{Binding PathToPdf}">
-    </WebView>
+
+    <Grid>
+        <Border Stroke="Black"
+                BackgroundColor="#1a1a1a"
+                StrokeThickness="2"
+                Padding="0"
+                HorizontalOptions="Center"
+                HeightRequest="400"
+                WidthRequest="350">
+
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="10,10,10,10" />
+            </Border.StrokeShape>
+
+            <Grid RowDefinitions=".75*, .25*"
+                  ColumnDefinitions=".25*, .50*, .25*">
+                
+                <Image Grid.ColumnSpan="3"
+                       Source="{Binding ActiveSlide}" />
+                
+
+                <ImageButton Grid.Row="1"
+                     Source="navigation_left_arrow.png"
+                     WidthRequest="50"
+                     HeightRequest="50"
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center" />
+
+                <ImageButton Grid.Row="1"
+                     Grid.Column="2"
+                     Source="navigation_right_arrow.png"
+                     WidthRequest="50"
+                     HeightRequest="50"
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center" />
+
+
+            </Grid>
+        </Border>
+    </Grid>
 
 </ContentPage>
