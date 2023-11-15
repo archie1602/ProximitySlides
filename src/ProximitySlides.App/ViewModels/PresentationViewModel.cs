@@ -19,13 +19,13 @@ public partial class PresentationViewModel : ObservableObject
     private readonly ISlideListener _slideListener;
     private readonly AppSettings _appSettings;
 
-    private readonly object _lock;
     private readonly IDictionary<int, ListenerSlide> _speakerSlides;
 
-    private Task? _checkSpeakerActivityTask;
-    private CancellationTokenSource _checkSpeakerActivityCts;
+    private event Action<ListenerSlide>? OnSlideReceivedHandler;
 
-    private readonly WebserverLite _server;
+    private Task? _checkSpeakerActivityTask;
+    private CancellationTokenSource? _checkSpeakerActivityCts;
+
     private readonly HttpClient _httpClient;
 
     private string _speakerDirectoryName;
@@ -41,21 +41,17 @@ public partial class PresentationViewModel : ObservableObject
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
         _httpClient = new HttpClient();
 
-        _lock = new object();
         _speakerSlides = new ConcurrentDictionary<int, ListenerSlide>();
 
         _checkSpeakerActivityCts = new CancellationTokenSource();
-
-        _server = WebserverHelper.BuildPdfViewerWebserver(_appSettings.PdfViewerWebServer.Hostname, _appSettings.PdfViewerWebServer.Port);
-        _server.Routes.PreAuthentication.Content.Add("/pdfjs/", true);
-        _server.Routes.PreAuthentication.Content.Add($"/{BaseSpeakersDirectoryName}/", true);
     }
 
     [ObservableProperty] private int _currentSlidePage;
 
     [ObservableProperty] private ListenerSlide _currentSlide = null!;
 
-    [ObservableProperty] private string _slideRenderSource = null!;
+    [ObservableProperty]
+    private ImageSource _activeSlide = null!;
 
     [ObservableProperty] private string _speakerId = null!;
 
@@ -63,9 +59,6 @@ public partial class PresentationViewModel : ObservableObject
 
     private const string SlideNamePattern = "slide_{0}.pdf";
     private const string BaseSpeakersDirectoryName = "speakers";
-
-    private static async Task DefaultRoute(HttpContextBase ctx) =>
-        await ctx.Response.Send($"Hello from default route: {ctx.Request.Url.RawWithQuery}");
     
     private async Task OnReceivedSlide(SlideDto slideDto)
     {
@@ -75,7 +68,15 @@ public partial class PresentationViewModel : ObservableObject
             
             if (_speakerSlides.TryGetValue(slideDto.CurrentSlide, out var existingSlide))
             {
-                SetCurrentSlide(existingSlide);
+                if (CurrentSlide.CurrentSlide != existingSlide.CurrentSlide)
+                {
+                    CurrentSlide = existingSlide;
+                    CurrentSlidePage = existingSlide.CurrentSlide;
+                    OnSlideReceivedHandler?.Invoke(existingSlide);
+                }
+                
+                // OnSlideReceivedHandler?.Invoke(existingSlide);
+                // SetCurrentSlide(existingSlide);
                 return;
             }
 
@@ -102,7 +103,11 @@ public partial class PresentationViewModel : ObservableObject
 
             _speakerSlides.Add(slideDto.CurrentSlide, newSlide);
             
-            SetCurrentSlide(newSlide);
+            CurrentSlide = newSlide;
+            CurrentSlidePage = newSlide.CurrentSlide;
+            OnSlideReceivedHandler?.Invoke(newSlide);
+            
+            // SetCurrentSlide(newSlide);
 
             // IDEA:
 
@@ -137,20 +142,20 @@ public partial class PresentationViewModel : ObservableObject
         return pathToFile;
     }
 
-    private void SetCurrentSlide(ListenerSlide existingSlide)
+    private void SetCurrentSlideImageSource(ListenerSlide slide)
     {
-        CurrentSlide = existingSlide;
-        CurrentSlidePage = existingSlide.CurrentSlide;
-        SlideRenderSource = $"{_server.Settings.Prefix}pdfjs/index.html?" +
-                            $"file=/{existingSlide.Storage.BaseSpeakersDirectory}/" +
-                            $"{existingSlide.Storage.BaseCurrentSpeakerDirectory}/" +
-                            $"{existingSlide.Storage.FileName}";
+        ActiveSlide = ImageSource.FromFile(slide.Storage.AbsoluteStoragePath);
+    }
+
+    private void SetCurrentSlideNavigationLabel(ListenerSlide slide)
+    {
+        // TODO:
     }
 
     private async Task CheckSpeakerActivityJob()
     {
         // TODO: move to config
-        var maxInactiveSpeakerTime = TimeSpan.FromSeconds(10);
+        var maxInactiveSpeakerTime = TimeSpan.FromSeconds(5);
 
         while (!_checkSpeakerActivityCts.Token.IsCancellationRequested)
         {
@@ -194,6 +199,10 @@ public partial class PresentationViewModel : ObservableObject
             _speakerSlides.Clear();
             
             // INITIAL SETUP
+            
+            // events
+            OnSlideReceivedHandler += SetCurrentSlideImageSource;
+            OnSlideReceivedHandler += SetCurrentSlideNavigationLabel;
 
             _speakerDirectoryName = Guid.NewGuid().ToString();
             // create folder for slides
@@ -205,12 +214,6 @@ public partial class PresentationViewModel : ObservableObject
             if (!Directory.Exists(_speakerSlidesStoragePath))
             {
                 Directory.CreateDirectory(_speakerSlidesStoragePath);
-            }
-
-            // start web server
-            if (!_server.IsListening)
-            {
-                _server.Start();
             }
 
             // start listen for slides
@@ -242,18 +245,16 @@ public partial class PresentationViewModel : ObservableObject
     {
         try
         {
-            if (_server.IsListening)
-            {
-                _server.Stop();
-            }
-
             _slideListener.StopListen();
+            _checkSpeakerActivityCts?.Cancel();
             
             if (_checkSpeakerActivityTask is not null)
             {
-                _checkSpeakerActivityCts.Cancel();
                 await _checkSpeakerActivityTask;
             }
+            
+            OnSlideReceivedHandler -= SetCurrentSlideImageSource;
+            OnSlideReceivedHandler -= SetCurrentSlideNavigationLabel;
             
             _speakerSlides.Clear();
         }

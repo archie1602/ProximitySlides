@@ -57,10 +57,20 @@ public class SlideListener : ISlideListener
     {
         while (!_queueWorkerCts.Token.IsCancellationRequested)
         {
+            var guid = Guid.NewGuid();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            _logger.LogInformation("(Guid: {Id}): START. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+            
             if (!_handlersQueue.TryDequeue(out var package))
             {
                 // TODO: move to config
                 // await Task.Delay(TimeSpan.FromMilliseconds(100));
+                
+                _logger.LogInformation("(Guid: {Id}): COULDN'T dequeue element from queue", guid);
+                
+                _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+                watch.Stop();
+                
                 continue;
             }
             
@@ -71,6 +81,10 @@ public class SlideListener : ISlideListener
 
                 if (tmpPackage is not null)
                 {
+                    _logger.LogInformation("(Guid: {Id}): TryUpdateExistingPackage", guid);
+                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+                    watch.Stop();
+                    
                     TryUpdateExistingPackage(package, tmpPackage);
                     continue;
                 }
@@ -84,14 +98,23 @@ public class SlideListener : ISlideListener
 
                 if (!isAllTotalPagesEqual)
                 {
+                    _logger.LogInformation("(Guid: {Id}): !isAllTotalPagesEqual", guid);
+                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+                    watch.Stop();
+                    
                     // TODO: skip all and start again...
                     _speakerSlides.Clear();
                     _speakerSlides.Add(package);
+                    
                     continue;
                 }
 
                 if (_speakerSlides.Count != package.TotalPages)
                 {
+                    _logger.LogInformation("(Guid: {Id}): _speakerSlides.Count != package.TotalPages", guid);
+                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+                    watch.Stop();
+                    
                     continue;
                 }
             
@@ -99,14 +122,26 @@ public class SlideListener : ISlideListener
 
                 if (slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
                 {
+                    _logger.LogInformation("(Guid: {Id}): slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute)", guid);
+                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+                    watch.Stop();
+                    
                     // TODO: add log
                     continue;
                 }
             
                 await InvokeHandler(slideMsg);
+                
+                _logger.LogInformation("(Guid: {Id}): HAPPY PATH InvokeHandler", guid);
+                _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+                watch.Stop();
             }
             catch (Exception e)
             {
+                _logger.LogInformation("(Guid: {Id}): Exception", guid);
+                _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+                watch.Stop();
+                
                 // TODO: add log
             
                 // TODO: clear нужно делать в случае, если упали на десериализации

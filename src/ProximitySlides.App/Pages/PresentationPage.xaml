@@ -25,16 +25,8 @@
                HorizontalOptions="Center"
                VerticalOptions="Center"/>
         
-        <WebView Grid.Row="1"
-                 Source="{Binding SlideRenderSource}">
-        </WebView>
-        
-        <!-- <Button Grid.Row="2" -->
-        <!--         WidthRequest="250" -->
-        <!--         HeightRequest="50" -->
-        <!--         Text="Leave" -->
-        <!--         Margin="0, 10, 0, 0" -->
-        <!--         Command="{Binding NavigateToListenerCommand}"/> -->
+        <Image Grid.Row="1"
+               Source="{Binding ActiveSlide}" />
     </Grid>
     
 </ContentPage>

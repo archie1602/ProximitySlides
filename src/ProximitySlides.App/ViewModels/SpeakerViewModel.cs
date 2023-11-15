@@ -16,7 +16,7 @@ namespace ProximitySlides.App.ViewModels;
 
 public partial class SpeakerViewModel : ObservableObject
 {
-    private const int BroadcastPeriodBetweenCircles = 1_000;
+    private const int BroadcastPeriodBetweenCircles = 500;
     
     private readonly ILogger<SpeakerViewModel> _logger;
     private readonly IProximitySender _proximitySender;
