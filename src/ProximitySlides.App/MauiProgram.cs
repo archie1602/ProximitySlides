@@ -39,6 +39,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<IProximitySender, BleSpeaker>();
         builder.Services.AddSingleton<IProximityListener, BleListener>();
 
+        builder.Services.AddSingleton<IFilePicker>(FilePicker.Default);
+
         var app = builder.Build();
 
         // Task.Run(async () =>

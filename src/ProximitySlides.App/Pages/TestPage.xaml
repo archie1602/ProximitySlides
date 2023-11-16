@@ -7,6 +7,12 @@
              xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
              x:DataType="viewModels:TestViewModel">
 
+    <Shell.TitleView>
+        <Grid>
+            <Label Text="My Title" HorizontalOptions="Start" VerticalOptions="Center" />
+        </Grid>
+    </Shell.TitleView>
+
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             EventName="Appearing"
@@ -17,44 +23,131 @@
             Command="{Binding DisappearingCommand}" />
     </ContentPage.Behaviors>
 
-    <Grid>
-        <Border Stroke="Black"
-                BackgroundColor="#1a1a1a"
-                StrokeThickness="2"
-                Padding="0"
-                HorizontalOptions="Center"
-                HeightRequest="400"
-                WidthRequest="350">
+    <!-- <Grid> -->
+    <!--     <Border Stroke="Black" -->
+    <!--             BackgroundColor="#1a1a1a" -->
+    <!--             StrokeThickness="2" -->
+    <!--             Padding="0" -->
+    <!--             HorizontalOptions="Center" -->
+    <!--             HeightRequest="400" -->
+    <!--             WidthRequest="350"> -->
+    <!-- -->
+    <!--         <Border.StrokeShape> -->
+    <!--             <RoundRectangle CornerRadius="10,10,10,10" /> -->
+    <!--         </Border.StrokeShape> -->
+    <!-- -->
+    <!--         <Grid RowDefinitions=".75*, .25*" -->
+    <!--               ColumnDefinitions=".25*, .50*, .25*"> -->
+    <!--              -->
+    <!--             <Image Grid.ColumnSpan="3" -->
+    <!--                    Source="{Binding ActiveSlide}" /> -->
+    <!--              -->
+    <!-- -->
+    <!--             <ImageButton Grid.Row="1" -->
+    <!--                  Source="navigation_left_arrow.png" -->
+    <!--                  WidthRequest="50" -->
+    <!--                  HeightRequest="50" -->
+    <!--                  HorizontalOptions="Center" -->
+    <!--                  VerticalOptions="Center" -->
+    <!--                  Command="{Binding FilePickerButtonClickedCommand}"/> -->
+    <!-- -->
+    <!--             <ImageButton Grid.Row="1" -->
+    <!--                  Grid.Column="2" -->
+    <!--                  Source="navigation_right_arrow.png" -->
+    <!--                  WidthRequest="50" -->
+    <!--                  HeightRequest="50" -->
+    <!--                  HorizontalOptions="Center" -->
+    <!--                  VerticalOptions="Center" /> -->
+    <!-- -->
+    <!-- -->
+    <!--         </Grid> -->
+    <!--     </Border> -->
+    <!-- </Grid> -->
 
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="10,10,10,10" />
-            </Border.StrokeShape>
+    <!--<Border Margin="10"
+        Stroke="#1a1a1a"
+            BackgroundColor="LightGray"
+            StrokeThickness="2">-->
 
-            <Grid RowDefinitions=".75*, .25*"
-                  ColumnDefinitions=".25*, .50*, .25*">
-                
-                <Image Grid.ColumnSpan="3"
-                       Source="{Binding ActiveSlide}" />
-                
+    <!--<Border.StrokeShape>
+            <RoundRectangle CornerRadius="10"/>
+        </Border.StrokeShape>-->
 
-                <ImageButton Grid.Row="1"
-                     Source="navigation_left_arrow.png"
-                     WidthRequest="50"
-                     HeightRequest="50"
-                     HorizontalOptions="Center"
-                     VerticalOptions="Center" />
+    <Grid RowDefinitions="100, Auto, *, Auto"
+          ColumnDefinitions=".50*, .50*"
+          BackgroundColor="#ffec99">
 
-                <ImageButton Grid.Row="1"
-                     Grid.Column="2"
-                     Source="navigation_right_arrow.png"
-                     WidthRequest="50"
-                     HeightRequest="50"
-                     HorizontalOptions="Center"
-                     VerticalOptions="Center" />
+        <Frame Margin="10,0,0,0" BorderColor="Gray" HeightRequest="50">
+            <Entry IsEnabled="False" />
+        </Frame>
 
+        <Label Margin="20, 0, 10, 0"
+               TextColor="Gray"
+               MaxLines="1"
+               Text="{Binding FileNameText}"
+               HorizontalOptions="StartAndExpand"
+               VerticalOptions="CenterAndExpand" />
 
-            </Grid>
-        </Border>
+        <Button Margin="10,0,10,0"
+                Grid.Column="1"
+                HeightRequest="50"
+                Text="Select"
+                Command="{Binding FilePickerButtonClickedCommand}" />
+
+        <Button Grid.Row="1"
+                Grid.ColumnSpan="2"
+                HeightRequest="50"
+                Text="Upload"
+                Margin="10,0,10,0"
+                Command="{Binding UploadFileButtonClickedCommand}" />
+
+        <CollectionView Grid.Row="2" Grid.ColumnSpan="2"
+                        Margin="10"
+                        BackgroundColor="#616161">
+
+            <CollectionView.ItemsSource>
+                <x:Array Type="{x:Type x:String}">
+                    <x:String>abc.pdf</x:String>
+                    <x:String>some_presentation_file.pdf</x:String>
+                    <x:String>anothet_presentation_file.pdf</x:String>
+                    <x:String>1_anothet_presentation_file.pdf</x:String>
+                    <x:String>2_anothet_presentation_file.pdf</x:String>
+                    <x:String>3_anothet_presentation_file.pdf</x:String>
+                    <x:String>4_anothet_presentation_file.pdf</x:String>
+                    <x:String>5_anothet_presentation_file.pdf</x:String>
+                    <x:String>6_anothet_presentation_file.pdf</x:String>
+                </x:Array>
+            </CollectionView.ItemsSource>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="0,5"
+                          Margin="10,0,10,0">
+                        <Frame>
+                            <Label Text="{Binding .}"
+                                   FontSize="20" />
+                        </Frame>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+        </CollectionView>
+
+        <Button Grid.Row="3"
+                Grid.ColumnSpan="2"
+                HeightRequest="50"
+                Text="Start"
+                Margin="10,0,10,10"
+                Command="{Binding StartButtonClickedCommand}" />
+        
     </Grid>
+    <!--</Border>-->
+
+    <!--<Grid RowDefinitions="100, Auto, Auto"
+          ColumnDefinitions=".50*, .50*">
+        <BoxView Color="Red" Grid.Column="0" Grid.Row="0" />
+        <BoxView Color="Green" WidthRequest="50" HeightRequest="200" Grid.Column="0" Grid.Row="1" />
+        <BoxView Color="Blue" Grid.Column="0" Grid.Row="2" />
+    </Grid>-->
 
 </ContentPage>

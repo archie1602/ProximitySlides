@@ -7,8 +7,6 @@ using ProximitySlides.App.Applications;
 using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Models;
-using WatsonWebserver.Core;
-using WatsonWebserver.Lite;
 
 namespace ProximitySlides.App.ViewModels;
 
