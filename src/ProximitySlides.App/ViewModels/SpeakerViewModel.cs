@@ -14,6 +14,8 @@ using ProximitySlides.Core.Extensions;
 
 namespace ProximitySlides.App.ViewModels;
 
+[QueryProperty(nameof(Presentation), nameof(Presentation))]
+[QueryProperty(nameof(SlidesLinks), nameof(SlidesLinks))]
 public partial class SpeakerViewModel : ObservableObject
 {
     private const int BroadcastPeriodBetweenCircles = 500;
@@ -52,6 +54,12 @@ public partial class SpeakerViewModel : ObservableObject
     private bool _isBroadcastingStart;
 
     private SpeakerIdentifier? _speakerId;
+
+    [ObservableProperty]
+    private StoredPresentation _presentation;
+    
+    [ObservableProperty]
+    private Dictionary<int, string> _slidesLinks;
     
     [ObservableProperty]
     private string _speakerIdText;
@@ -65,128 +73,26 @@ public partial class SpeakerViewModel : ObservableObject
     [ObservableProperty]
     private Color _broadcastingButtonBgColor;
 
-    private static Dictionary<int, SpeakerSlide> UploadSlides()
+    private Dictionary<int, SpeakerSlide> UploadSlides()
     {
-        // TODO: 1. get all files from ecc75f80-68a9-4a75-ac60-ce33b5b81eaf/slides directory
-        // TODO: 2. sort them by order
-        // TODO: 3. upload each slide to user google drive via API and get public link
-        
-        var slides = new Dictionary<int, SpeakerSlide>
-        {
-            {
-                1,
-                new SpeakerSlide
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1qaCK7zcZYCGrelBSuO26y5ExDSwIf6g-"),
-                    CurrentSlide = 1,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                2,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1cY_8eEsgmsiWtiyGUBFyvBqUwgdXCxc_"),
-                    CurrentSlide = 2,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                3,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1HkVf0Bz6XPsZUvXSue24ygzDpQdjJ2Gf"),
-                    CurrentSlide = 3,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                4,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1oFyjDPPcRly_GlvCuRy7vH4XV6EwQBwy"),
-                    CurrentSlide = 4,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                5,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=10ndZlbwalDAEA9HjM6LN_7adFwZV56sv"),
-                    CurrentSlide = 5,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                6,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1YQupP3ww4OGI5SpOFM_rY4t8PNQ9JJgE"),
-                    CurrentSlide = 6,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                7,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1EJcp_NY1pvsxE4pBLwsrXpUnO1N7_bDj"),
-                    CurrentSlide = 7,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                8,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1AuS9rVS1nNIqZ-8zf4bzQ6-xrvROE6Vc"),
-                    CurrentSlide = 8,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                9,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1qOl5eYj_Vna78bXdXjvFK6xCwGuYJpJP"),
-                    CurrentSlide = 9,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            },
-            {
-                10,
-                new SpeakerSlide 
-                { 
-                    Url = new Uri("https://drive.google.com/uc?id=1RVAkkBfBiTa81TPrUvuqSJG9pRora--l"),
-                    CurrentSlide = 10,
-                    TotalSlides = 10,
-                    Storage = null
-                }
-            }
-        };
+        var slides = new Dictionary<int, SpeakerSlide>();
 
-        var i = 1;
-
-        foreach (var s in slides)
+        foreach (var (page, link) in SlidesLinks)
         {
-            s.Value.Storage = new SlideStorage
+            slides.Add(page, new SpeakerSlide
             {
-                FileName = $"slide_{i}",
-                BaseSpeakersDirectory = "presentations",
-                BaseCurrentSpeakerDirectory = "2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9",
-                AbsoluteStoragePath = $"/data/data/com.companyname.proximityslides.app/files/presentations/2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9/slides/slide_{i}.png",
-                RelativeStoragePath = $"presentations/2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9/slides/slide_{i++}.png"
-            };
+                Url = new Uri(link),
+                CurrentSlide = page,
+                TotalSlides = SlidesLinks.Count,
+                Storage = new SlideStorage
+                {
+                    FileName = $"slide_{page}",
+                    BaseSpeakersDirectory = "presentations",
+                    BaseCurrentSpeakerDirectory = Path.GetFileName(Path.GetDirectoryName(Presentation.Path)),
+                    AbsoluteStoragePath = Path.Combine(Path.GetDirectoryName(Presentation.Path), "slides", $"slide_{page}.png"),
+                    RelativeStoragePath = Path.Combine("presentations", Path.GetFileName(Path.GetDirectoryName(Presentation.Path)), "slides", $"slide_{page}.png")
+                }
+            });
         }
         
         return slides;
@@ -271,8 +177,7 @@ public partial class SpeakerViewModel : ObservableObject
         }
         catch (Exception e)
         {
-            // TODO:
-            var a = 5;
+            
         }
     }
     

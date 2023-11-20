@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Models;
+using ProximitySlides.App.Pages;
 using SkiaSharp;
 
 namespace ProximitySlides.App.ViewModels;
@@ -152,7 +153,7 @@ public partial class BrowserViewModel : ObservableObject
             // TODO: add logger
 
             // TODO:
-            await Shell.Current.DisplayAlert("", "", "");
+            await Shell.Current.DisplayAlert("Error", "Error", "Ok");
         }
         finally
         {
@@ -179,6 +180,11 @@ public partial class BrowserViewModel : ObservableObject
         }
     }
 
+    private void GetMockSlideLinks()
+    {
+        
+    }
+
     [RelayCommand]
     private async Task OnStartButtonClicked()
     {
@@ -188,16 +194,26 @@ public partial class BrowserViewModel : ObservableObject
             return;
         }
         
-        // upload to google drive
-
-        var slidesDirPath = Path.Combine(Path.GetDirectoryName(SelectedItem.Path), "slides");     
-        var slidesLinks = await GoogleDriveHelper.Upload(slidesDirPath);
+        // TODO: upload to google drive
+        var slidesDirPath = Path.Combine(Path.GetDirectoryName(SelectedItem.Path), "slides");
+        var slidesLinks = await GoogleDriveHelper.UploadMock(SelectedItem.Name);
         
-        await Shell.Current.DisplayAlert("HappyPath", $"Start broadcasting {SelectedItem.Name}!", "OK");
+        await Release();
+        await Shell.Current.GoToAsync(
+            $"{nameof(SpeakerPage)}",
+            new Dictionary<string, object>
+            {
+                ["Presentation"] = SelectedItem,
+                ["SlidesLinks"] = slidesLinks
+            });
     }
 
     [RelayCommand]
     private void OnDisappearing()
+    {
+    }
+    
+    private async Task Release()
     {
     }
 }

@@ -53,10 +53,6 @@
                                            IconImageSource="trash_can.svg"
                                            BackgroundColor="Pink">
                                 </SwipeItem>
-                                <SwipeItem Text="Upload"
-                                           IconImageSource="cloud_upload.svg"
-                                           BackgroundColor="SkyBlue">
-                                </SwipeItem>
                             </SwipeItems>
                         </SwipeView.RightItems>
 
