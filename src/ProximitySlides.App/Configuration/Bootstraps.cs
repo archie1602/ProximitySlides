@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using ProximitySlides.App.Managers;
@@ -25,6 +24,7 @@ public static class Bootstraps
         services.AddSingleton<SpeakerViewModel>();
         services.AddSingleton<ListenerViewModel>();
         services.AddSingleton<PresentationViewModel>();
+        services.AddSingleton<BrowserViewModel>();
         services.AddSingleton<TestViewModel>();
 
         services.AddSingleton<ISlideListener, SlideListener>();
@@ -41,6 +41,7 @@ public static class Bootstraps
         services.AddTransient<SpeakerPage>();
         services.AddTransient<ListenerPage>();
         services.AddTransient<PresentationPage>();
+        services.AddTransient<BrowserPage>();
         services.AddTransient<TestPage>();
         
         return services;

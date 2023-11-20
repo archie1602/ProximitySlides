@@ -1,22 +1,25 @@
 ﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Models;
 using SkiaSharp;
 
 namespace ProximitySlides.App.ViewModels;
 
-public partial class TestViewModel : ObservableObject
+public partial class BrowserViewModel : ObservableObject
 {
+    private readonly ILogger<BrowserViewModel> _logger;
     private readonly IFilePicker _filePicker;
 
     private string _basePath = Path.Combine(FileSystem.Current.AppDataDirectory, "presentations");
 
     private FileResult? _selectedFileResult;
 
-    public TestViewModel(IFilePicker filePicker)
+    public BrowserViewModel(ILogger<BrowserViewModel> logger, IFilePicker filePicker)
     {
+        _logger = logger;
         _filePicker = filePicker;
         StoredPresentations = new ObservableCollection<StoredPresentation>();
 
@@ -186,6 +189,9 @@ public partial class TestViewModel : ObservableObject
         }
         
         // upload to google drive
+
+        var slidesDirPath = Path.Combine(Path.GetDirectoryName(SelectedItem.Path), "slides");     
+        var slidesLinks = await GoogleDriveHelper.Upload(slidesDirPath);
         
         await Shell.Current.DisplayAlert("HappyPath", $"Start broadcasting {SelectedItem.Name}!", "OK");
     }

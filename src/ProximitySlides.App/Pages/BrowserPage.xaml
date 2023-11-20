@@ -3,76 +3,10 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-             x:Class="ProximitySlides.App.Pages.TestPage"
              xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
              xmlns:models="clr-namespace:ProximitySlides.App.Models"
-             x:DataType="viewModels:TestViewModel">
-
-    <Shell.TitleView>
-        <Grid>
-            <Label Text="My Title" HorizontalOptions="Start" VerticalOptions="Center" />
-        </Grid>
-    </Shell.TitleView>
-
-    <ContentPage.Behaviors>
-        <toolkit:EventToCommandBehavior
-            EventName="Appearing"
-            Command="{Binding AppearingCommand}" />
-
-        <toolkit:EventToCommandBehavior
-            EventName="Disappearing"
-            Command="{Binding DisappearingCommand}" />
-    </ContentPage.Behaviors>
-
-    <!-- <Grid> -->
-    <!--     <Border Stroke="Black" -->
-    <!--             BackgroundColor="#1a1a1a" -->
-    <!--             StrokeThickness="2" -->
-    <!--             Padding="0" -->
-    <!--             HorizontalOptions="Center" -->
-    <!--             HeightRequest="400" -->
-    <!--             WidthRequest="350"> -->
-    <!-- -->
-    <!--         <Border.StrokeShape> -->
-    <!--             <RoundRectangle CornerRadius="10,10,10,10" /> -->
-    <!--         </Border.StrokeShape> -->
-    <!-- -->
-    <!--         <Grid RowDefinitions=".75*, .25*" -->
-    <!--               ColumnDefinitions=".25*, .50*, .25*"> -->
-    <!--              -->
-    <!--             <Image Grid.ColumnSpan="3" -->
-    <!--                    Source="{Binding ActiveSlide}" /> -->
-    <!--              -->
-    <!-- -->
-    <!--             <ImageButton Grid.Row="1" -->
-    <!--                  Source="navigation_left_arrow.png" -->
-    <!--                  WidthRequest="50" -->
-    <!--                  HeightRequest="50" -->
-    <!--                  HorizontalOptions="Center" -->
-    <!--                  VerticalOptions="Center" -->
-    <!--                  Command="{Binding FilePickerButtonClickedCommand}"/> -->
-    <!-- -->
-    <!--             <ImageButton Grid.Row="1" -->
-    <!--                  Grid.Column="2" -->
-    <!--                  Source="navigation_right_arrow.png" -->
-    <!--                  WidthRequest="50" -->
-    <!--                  HeightRequest="50" -->
-    <!--                  HorizontalOptions="Center" -->
-    <!--                  VerticalOptions="Center" /> -->
-    <!-- -->
-    <!-- -->
-    <!--         </Grid> -->
-    <!--     </Border> -->
-    <!-- </Grid> -->
-
-    <!--<Border Margin="10"
-        Stroke="#1a1a1a"
-            BackgroundColor="LightGray"
-            StrokeThickness="2">-->
-
-    <!--<Border.StrokeShape>
-            <RoundRectangle CornerRadius="10"/>
-        </Border.StrokeShape>-->
+             x:Class="ProximitySlides.App.Pages.BrowserPage"
+             x:DataType="viewModels:BrowserViewModel">
 
     <Grid RowDefinitions="100, Auto, *, Auto"
           ColumnDefinitions=".50*, .50*"
@@ -150,13 +84,5 @@
                 Command="{Binding StartButtonClickedCommand}" />
 
     </Grid>
-    <!--</Border>-->
-
-    <!--<Grid RowDefinitions="100, Auto, Auto"
-          ColumnDefinitions=".50*, .50*">
-        <BoxView Color="Red" Grid.Column="0" Grid.Row="0" />
-        <BoxView Color="Green" WidthRequest="50" HeightRequest="200" Grid.Column="0" Grid.Row="1" />
-        <BoxView Color="Blue" Grid.Column="0" Grid.Row="2" />
-    </Grid>-->
 
 </ContentPage>

@@ -2,9 +2,9 @@
 
 namespace ProximitySlides.App.Pages;
 
-public partial class TestPage : ContentPage
+public partial class BrowserPage : ContentPage
 {
-    public TestPage(TestViewModel viewModel)
+    public BrowserPage(BrowserViewModel viewModel)
     {
         InitializeComponent();
         BindingContext = viewModel;
