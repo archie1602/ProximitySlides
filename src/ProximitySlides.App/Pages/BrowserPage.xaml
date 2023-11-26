@@ -9,8 +9,7 @@
              x:DataType="viewModels:BrowserViewModel">
 
     <Grid RowDefinitions="100, Auto, *, Auto"
-          ColumnDefinitions=".50*, .50*"
-          BackgroundColor="#ffec99">
+          ColumnDefinitions=".50*, .50*">
 
         <Frame Margin="10,0,0,0" BorderColor="Gray" HeightRequest="50">
             <Entry IsEnabled="False" />

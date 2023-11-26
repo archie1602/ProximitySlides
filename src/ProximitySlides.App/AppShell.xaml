@@ -19,8 +19,8 @@
              Icon="tab_home.svg">
             <ShellContent ContentTemplate="{DataTemplate pages:MainPage}"/>
         </Tab>
-        <Tab Title="Favorites"
-             Icon="tab_favorites.svg">
+        <Tab Title="Settings"
+             Icon="tab_settings.svg">
             <ShellContent ContentTemplate="{DataTemplate pages:TestPage}"/>
         </Tab>
     </TabBar>
