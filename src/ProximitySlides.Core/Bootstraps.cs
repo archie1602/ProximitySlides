@@ -10,7 +10,7 @@ public static class Bootstraps
     public static IServiceCollection AddCore(this IServiceCollection services)
     {
         services.AddSingleton<IBleScanner, BleScanner>();
-        services.AddSingleton<IBleAdvertiser, BleAdvertiser>();
+        services.AddSingleton<IBleAdvertiser, BleExtendedAdvertiser>();
         
         return services;
     }

@@ -77,7 +77,6 @@ public partial class BrowserViewModel : ObservableObject
     [RelayCommand]
     private async Task OnAppearing()
     {
-        
     }
 
     [RelayCommand]
