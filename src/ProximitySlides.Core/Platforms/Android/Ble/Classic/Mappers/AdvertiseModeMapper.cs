@@ -1,7 +1,7 @@
 ﻿using Android.Bluetooth.LE;
-using ProximitySlides.Core.Managers.Advertisers;
+using ProximitySlides.Core.Managers.Advertisers.Classic;
 
-namespace ProximitySlides.Core.Platforms.Android.Mappers;
+namespace ProximitySlides.Core.Platforms.Android.Ble.Classic.Mappers;
 
 public static class AdvertiseModeMapper
 {

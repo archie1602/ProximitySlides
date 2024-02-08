@@ -3,12 +3,11 @@ using Android.Bluetooth.LE;
 using Android.Content;
 using Android.OS;
 using ProximitySlides.Core.Exceptions;
-using ProximitySlides.Core.Managers;
 using ProximitySlides.Core.Managers.Scanners;
-using ProximitySlides.Core.Platforms.Android.Mappers;
-using ScanMode = Android.Bluetooth.LE.ScanMode;
+using ProximitySlides.Core.Platforms.Android.Ble.Classic.Mappers;
+using BluetoothPhy = Android.Bluetooth.BluetoothPhy;
 
-namespace ProximitySlides.Core.Platforms.Android;
+namespace ProximitySlides.Core.Platforms.Android.Ble.Common;
 
 public class BleScanner : ScanCallback, IBleScanner
 {
@@ -71,10 +70,20 @@ public class BleScanner : ScanCallback, IBleScanner
         
         var serviceUuid = ParcelUuid.FromString(scanConfig.ServiceDataUuid);
         var scanMode = ScanModeMapper.Map(scanConfig.Mode);
+
+        var settingsBuilder = new ScanSettings.Builder()
+            .SetScanMode(scanMode);
         
-        var settings = new ScanSettings.Builder()
-            .SetScanMode(scanMode)
-            ?.Build();
+        if (scanConfig.IsExtended)
+        {
+            // .SetPhy(ScanSettingsPhy.AllSupported)
+            
+            settingsBuilder
+                ?.SetLegacy(false)
+                ?.SetPhy((BluetoothPhy)255);
+        }
+
+        var settings = settingsBuilder?.Build();
 
         if (settings is null)
         {

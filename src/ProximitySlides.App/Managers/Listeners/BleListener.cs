@@ -98,6 +98,7 @@ public class BleListener : IProximityListener
     }
     
     public void StartListenSpeaker(
+        bool isExtended,
         string appId,
         SpeakerIdentifier speakerIdentifier,
         Action<BlePackageMessage>? listenResultCallback,
@@ -108,6 +109,7 @@ public class BleListener : IProximityListener
         _isSpeakerIdFilterEnabled = true;
         
         var scanConfig = new ScanConfig(
+            IsExtended: isExtended,
             Mode: BleScanMode.LowLatency,
             ServiceDataUuid: _listenId);
 
@@ -118,6 +120,7 @@ public class BleListener : IProximityListener
     }
 
     public void StartListenAllSpeakers(
+        bool isExtended,
         string appId,
         Action<BlePackageMessage>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback)
@@ -126,6 +129,7 @@ public class BleListener : IProximityListener
         _isSpeakerIdFilterEnabled = false;
         
         var scanConfig = new ScanConfig(
+            IsExtended: isExtended,
             Mode: BleScanMode.LowLatency,
             ServiceDataUuid: _listenId);
 

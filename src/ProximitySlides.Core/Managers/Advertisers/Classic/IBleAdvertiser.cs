@@ -1,4 +1,4 @@
-namespace ProximitySlides.Core.Managers.Advertisers;
+namespace ProximitySlides.Core.Managers.Advertisers.Classic;
 
 public interface IBleAdvertiser
 {

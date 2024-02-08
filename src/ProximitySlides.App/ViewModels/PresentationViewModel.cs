@@ -218,6 +218,7 @@ public partial class PresentationViewModel : ObservableObject
             var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
 
             _slideListener.StartListenSlides(
+                isExtended: true,
                 appId: _appSettings.AppAdvertiserId,
                 speakerIdentifier: speakerIdentifier,
                 listenResultCallback: OnReceivedSlide,

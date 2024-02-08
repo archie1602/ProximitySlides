@@ -3,6 +3,7 @@
 public interface ISlideListener
 {
     void StartListenSlides(
+        bool isExtended,
         string appId,
         SpeakerIdentifier speakerIdentifier,
         Func<SlideDto, Task>? listenResultCallback,

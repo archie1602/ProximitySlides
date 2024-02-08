@@ -188,7 +188,7 @@ public partial class SpeakerViewModel : ObservableObject
         
         var dataBytes = Encoding.ASCII.GetBytes(slideJsonCompress);
 
-        await _proximitySender.SendMessage(_appSettings.AppAdvertiserId, speakerId, dataBytes,
+        await _proximitySender.SendExtendedMessage(_appSettings.AppAdvertiserId, speakerId, dataBytes,
             CancellationToken.None);
     }
     

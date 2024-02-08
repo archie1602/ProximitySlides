@@ -1,8 +1,7 @@
 ﻿using Android.Bluetooth.LE;
-using Kotlin;
 using ProximitySlides.Core.Managers.Scanners;
 
-namespace ProximitySlides.Core.Platforms.Android.Mappers;
+namespace ProximitySlides.Core.Platforms.Android.Ble.Classic.Mappers;
 
 public static class ScanCallbackTypeMapper
 {

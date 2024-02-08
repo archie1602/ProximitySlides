@@ -221,6 +221,7 @@ public class SlideListener : ISlideListener
     }
 
     public void StartListenSlides(
+        bool isExtended,
         string appId,
         SpeakerIdentifier speakerIdentifier,
         Func<SlideDto, Task>? listenResultCallback,
@@ -236,6 +237,7 @@ public class SlideListener : ISlideListener
         _queueWorkerTask = Task.Run(HandleMessage, _queueWorkerCts.Token);
         
         _proximityListener.StartListenSpeaker(
+            isExtended: isExtended,
             appId: appId,
             speakerIdentifier: speakerIdentifier,
             listenResultCallback: OnScanResult,

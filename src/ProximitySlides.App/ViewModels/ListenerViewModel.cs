@@ -164,7 +164,11 @@ public partial class ListenerViewModel : ObservableObject
                 _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
             }
 
-            _proximityListener.StartListenAllSpeakers(_appSettings.AppAdvertiserId, OnReceivedPackage, OnListenFailed);
+            _proximityListener.StartListenAllSpeakers(
+                true,
+                _appSettings.AppAdvertiserId,
+                OnReceivedPackage,
+                OnListenFailed);
         }
         catch (Exception ex)
         {
