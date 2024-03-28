@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0-android</TargetFramework>
+        <TargetFramework>net8.0-android</TargetFramework>
         <!-- <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net7.0-windows10.0.19041.0</TargetFrameworks> -->
         <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
         <!-- <TargetFrameworks>$(TargetFrameworks);net7.0-tizen</TargetFrameworks> -->
@@ -19,21 +19,26 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Update="Managers\Scanners\IBleScanner.cs">
-        <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-      </Compile>
-      <Compile Update="Platforms\Android\Ble\Extended\BleExtendedAdvertiser.cs">
-        <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-      </Compile>
-      <Compile Update="Managers\Advertisers\Classic\IBleAdvertiser.cs">
-        <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-      </Compile>
-      <Compile Update="Platforms\Android\Ble\Classic\BleAdvertiser.cs">
-        <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-      </Compile>
-      <Compile Update="Platforms\Android\Ble\Common\BleScanner.cs">
-        <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-      </Compile>
+        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.14"/>
+        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.14"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="Managers\Scanners\IBleScanner.cs">
+            <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+        </Compile>
+        <Compile Update="Platforms\Android\Ble\Extended\BleExtendedAdvertiser.cs">
+            <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+        </Compile>
+        <Compile Update="Managers\Advertisers\Classic\IBleAdvertiser.cs">
+            <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+        </Compile>
+        <Compile Update="Platforms\Android\Ble\Classic\BleAdvertiser.cs">
+            <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+        </Compile>
+        <Compile Update="Platforms\Android\Ble\Common\BleScanner.cs">
+            <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+        </Compile>
     </ItemGroup>
 
 </Project>

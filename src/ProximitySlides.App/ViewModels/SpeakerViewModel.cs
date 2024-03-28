@@ -19,13 +19,13 @@ namespace ProximitySlides.App.ViewModels;
 public partial class SpeakerViewModel : ObservableObject
 {
     private const int BroadcastPeriodBetweenCircles = 500;
-    
+
     private readonly ILogger<SpeakerViewModel> _logger;
     private readonly IProximitySender _proximitySender;
     private readonly AppSettings _appSettings;
-    
+
     private readonly IDictionary<int, SpeakerSlide> _slides;
-    
+
     private Task? _broadcastingSlidesTask;
     private CancellationTokenSource? _broadcastingSlidesCts;
 
@@ -40,15 +40,15 @@ public partial class SpeakerViewModel : ObservableObject
     {
         _logger = logger;
         _proximitySender = proximitySender;
-        
+
         _slides = new ConcurrentDictionary<int, SpeakerSlide>();
-        
+
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
     }
-    
+
     [ObservableProperty]
     private ImageSource _activeSlide = null!;
-    
+
     private int _currentSlidePage = 1;
     private int _totalSlidePages = 1;
     private bool _isBroadcastingStart;
@@ -57,10 +57,10 @@ public partial class SpeakerViewModel : ObservableObject
 
     [ObservableProperty]
     private StoredPresentation _presentation;
-    
+
     [ObservableProperty]
     private Dictionary<int, string> _slidesLinks;
-    
+
     [ObservableProperty]
     private string _speakerIdText;
 
@@ -69,7 +69,7 @@ public partial class SpeakerViewModel : ObservableObject
 
     [ObservableProperty]
     private string _broadcastingButtonText;
-    
+
     [ObservableProperty]
     private Color _broadcastingButtonBgColor;
 
@@ -77,7 +77,7 @@ public partial class SpeakerViewModel : ObservableObject
     {
         var slides = new Dictionary<int, SpeakerSlide>();
 
-        foreach (var (page, link) in SlidesLinks)
+        foreach ((int page, string link) in SlidesLinks)
         {
             slides.Add(page, new SpeakerSlide
             {
@@ -94,7 +94,7 @@ public partial class SpeakerViewModel : ObservableObject
                 }
             });
         }
-        
+
         return slides;
     }
 
@@ -110,12 +110,12 @@ public partial class SpeakerViewModel : ObservableObject
             ActiveSlide = ImageSource.FromFile(currentSlide.Storage.AbsoluteStoragePath);
             OnSlideSwitchedHandler?.Invoke(page);
         }
-        
+
         // TODO: stop the whole process
         // TODO: add log
         // TODO: show error alert
     }
-    
+
     private void SetActiveSlidePage(int page)
     {
         _currentSlidePage = page;
@@ -129,7 +129,7 @@ public partial class SpeakerViewModel : ObservableObject
             SpeakerIdText = $"Id: {_speakerId.SpeakerId}";
             return;
         }
-        
+
         SpeakerIdText = "Id: NULL";
     }
 
@@ -146,7 +146,7 @@ public partial class SpeakerViewModel : ObservableObject
         BroadcastingButtonText = "Start";
         BroadcastingButtonBgColor = Color.FromRgb(144, 238, 144);
     }
-    
+
     private async Task BroadcastSlidesJob()
     {
         try
@@ -156,10 +156,10 @@ public partial class SpeakerViewModel : ObservableObject
                 _logger.LogError("Cancellation token source {Cts} is null", nameof(_broadcastingSlidesCts));
                 return;
             }
-            
+
             // var speakerId = _proximitySender.GenerateSenderIdentifier();
             // await MainThread.InvokeOnMainThreadAsync(() => OnBroadcastingStartedHandler?.Invoke(speakerId));
-            
+
             while (!_broadcastingSlidesCts.Token.IsCancellationRequested)
             {
                 if (!_slides.TryGetValue(_currentSlidePage, out var currentSlide))
@@ -177,21 +177,21 @@ public partial class SpeakerViewModel : ObservableObject
         }
         catch (Exception e)
         {
-            
+
         }
     }
-    
+
     private async Task SendSlide(SlideMessage slideMsg, SpeakerIdentifier speakerId)
     {
         var slideJson = JsonSerializer.Serialize(slideMsg);
         var slideJsonCompress = slideJson.CompressJson();
-        
+
         var dataBytes = Encoding.ASCII.GetBytes(slideJsonCompress);
 
         await _proximitySender.SendExtendedMessage(_appSettings.AppAdvertiserId, speakerId, dataBytes,
             CancellationToken.None);
     }
-    
+
     [RelayCommand]
     private void OnAppearing()
     {
@@ -206,16 +206,16 @@ public partial class SpeakerViewModel : ObservableObject
             {
                 _slides.Add(s.Key, s.Value);
             }
-            
+
             _totalSlidePages = _slides.Count;
-            
+
             // events
             OnSlideSwitchedHandler += SetActiveSlidePage;
             OnBroadcastingStartedHandler += SetSpeakerId;
             OnBroadcastingStartedHandler += SetBroadcastingButton;
             OnBroadcastingStoppedHandler += SetSpeakerId;
             OnBroadcastingStoppedHandler += SetBroadcastingButton;
-            
+
             // init starting
             SetActiveSlide(1);
             SetSpeakerId();
@@ -232,7 +232,7 @@ public partial class SpeakerViewModel : ObservableObject
     {
         SetActiveSlide(_currentSlidePage - 1);
     }
-    
+
     [RelayCommand]
     private void OnNextSlideClicked()
     {
@@ -250,21 +250,21 @@ public partial class SpeakerViewModel : ObservableObject
 
         StartBroadcasting();
     }
-    
+
     [RelayCommand]
     private async Task OnBackButtonClicked()
     {
         await Release();
         await Shell.Current.Navigation.PopAsync();
     }
-    
+
     private async Task Release()
     {
         try
         {
             await StopBroadcasting();
             _slides.Clear();
-            
+
             OnSlideSwitchedHandler -= SetActiveSlidePage;
             OnBroadcastingStartedHandler -= SetSpeakerId;
             OnBroadcastingStartedHandler -= SetBroadcastingButton;
@@ -276,22 +276,22 @@ public partial class SpeakerViewModel : ObservableObject
             // TODO:
         }
     }
-    
+
     private void StartBroadcasting()
     {
         _speakerId = _proximitySender.GenerateSenderIdentifier();
-        
+
         _broadcastingSlidesCts = new CancellationTokenSource();
         _broadcastingSlidesTask = Task.Run(BroadcastSlidesJob, _broadcastingSlidesCts.Token);
-        
+
         _isBroadcastingStart = true;
         OnBroadcastingStartedHandler?.Invoke();
     }
-    
+
     private async Task StopBroadcasting()
     {
         _broadcastingSlidesCts?.Cancel();
-            
+
         if (_broadcastingSlidesTask is not null)
         {
             await _broadcastingSlidesTask;
