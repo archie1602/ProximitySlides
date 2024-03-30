@@ -133,7 +133,7 @@ public class BleSpeaker : IProximitySender
                 packageToSend[k++] = data[j];
             }
 
-            var avdOptions = new AdvertisementOptions(
+            var advOptions = new AdvertisementOptions(
                 Settings: advSettings,
                 Data: new AdvertisementCommonData(
                     IncludeDeviceName: false,
@@ -141,7 +141,7 @@ public class BleSpeaker : IProximitySender
                     ServicesData: new List<ServiceData> { new(appUuid, packageToSend) }));
 
             _bleAdvertiser.StartAdvertising(
-                options: avdOptions,
+                options: advOptions,
                 startSuccessCallback: OnStartSuccess,
                 startFailureCallback: OnStartFailure);
 
@@ -159,7 +159,7 @@ public class BleSpeaker : IProximitySender
     {
         var appUuid = GetSenderUuid(appId);
         var senderIdBytes = Encoding.ASCII.GetBytes(speakerIdentifier.SpeakerId);
-        
+
         var advSettings = new ExtendedAdvertisementSettings(
             Interval: ExtendedAdvertisementInterval.IntervalHigh,
             TxPowerLevel: BleExtendedAdvertiseTx.High,
@@ -209,8 +209,8 @@ public class BleSpeaker : IProximitySender
             {
                 packageToSend[k++] = data[j];
             }
-            
-            var avdOptions = new AdvertisementExtendedOptions(
+
+            var advOptions = new AdvertisementExtendedOptions(
                 Settings: advSettings,
                 Data: new AdvertisementCommonData(
                     IncludeDeviceName: false,
@@ -218,7 +218,7 @@ public class BleSpeaker : IProximitySender
                     ServicesData: new List<ServiceData> { new(appUuid, packageToSend) }));
 
             _bleExtendedAdvertiser.StartAdvertising(
-                options: avdOptions,
+                options: advOptions,
                 startSuccessCallback: OnStartSuccess,
                 startFailureCallback: OnStartFailure);
 

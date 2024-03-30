@@ -13,7 +13,7 @@ public class BleScanner : ScanCallback, IBleScanner
 {
     private Action<BleScanCallbackType, ScanResult?>? _onScanResultHandler;
     private Action<BleScanFailure>? _onScanFailedHandler;
-    
+
     public BleScanner()
     {
         // _appContext = appContext;
@@ -25,7 +25,7 @@ public class BleScanner : ScanCallback, IBleScanner
         //
         // Native = bluetoothManager;
     }
-    
+
     public bool IsScanning { get; private set; }
 
     public override void OnScanResult(ScanCallbackType callbackType, ScanResult? result)
@@ -67,17 +67,17 @@ public class BleScanner : ScanCallback, IBleScanner
         {
             throw new BluetoothAdapterIsDisabled("Bluetooth adapter is disabled");
         }
-        
+
         var serviceUuid = ParcelUuid.FromString(scanConfig.ServiceDataUuid);
         var scanMode = ScanModeMapper.Map(scanConfig.Mode);
 
         var settingsBuilder = new ScanSettings.Builder()
             .SetScanMode(scanMode);
-        
+
         if (scanConfig.IsExtended)
         {
             // .SetPhy(ScanSettingsPhy.AllSupported)
-            
+
             settingsBuilder
                 ?.SetLegacy(false)
                 ?.SetPhy((BluetoothPhy)255);
@@ -89,7 +89,7 @@ public class BleScanner : ScanCallback, IBleScanner
         {
             throw new BleException("Unable to create scan settings");
         }
-        
+
         var filter = new ScanFilter.Builder()
             .SetServiceData(
                 serviceDataUuid: serviceUuid,
@@ -100,15 +100,15 @@ public class BleScanner : ScanCallback, IBleScanner
         {
             throw new BleException("Unable to create scan filter");
         }
-        
+
         _onScanResultHandler = scanResultCallback;
         _onScanFailedHandler = scanFailedCallback;
-        
+
         bleScanner.StartScan(
             filters: new List<ScanFilter> { filter },
             settings: settings,
             callback: this);
-        
+
         IsScanning = true;
     }
 
@@ -118,21 +118,21 @@ public class BleScanner : ScanCallback, IBleScanner
         {
             return;
         }
-        
+
         var bleManager = Platform.CurrentActivity?.GetSystemService(Context.BluetoothService) as BluetoothManager;
         var bleAdapter = bleManager?.Adapter;
         var bleScanner = bleAdapter?.BluetoothLeScanner;
-        
+
         if (bleScanner is null)
         {
             throw new BleNotAvailableException("BluetoothLeScanner is not available");
         }
-        
+
         bleScanner.StopScan(this);
-        
+
         _onScanResultHandler = null;
         _onScanFailedHandler = null;
-        
+
         IsScanning = false;
     }
 }

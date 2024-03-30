@@ -17,6 +17,7 @@ public partial class PresentationViewModel : ObservableObject
     private readonly ISlideListener _slideListener;
     private readonly AppSettings _appSettings;
 
+    // slide number -> slide
     private readonly IDictionary<int, ListenerSlide> _speakerSlides;
 
     private event Action<ListenerSlide>? OnSlideReceivedHandler;
@@ -44,26 +45,29 @@ public partial class PresentationViewModel : ObservableObject
         _checkSpeakerActivityCts = new CancellationTokenSource();
     }
 
-    [ObservableProperty] private int _currentSlidePage;
+    [ObservableProperty]
+    private int _currentSlidePage;
 
-    [ObservableProperty] private ListenerSlide _currentSlide = null!;
+    [ObservableProperty]
+    private ListenerSlide _currentSlide = null!;
 
     [ObservableProperty]
     private ImageSource _activeSlide = null!;
 
-    [ObservableProperty] private string _speakerId = null!;
+    [ObservableProperty]
+    private string _speakerId = null!;
 
     private DateTime? _lastReceivedMessageTime;
 
     private const string SlideNamePattern = "slide_{0}.pdf";
     private const string BaseSpeakersDirectoryName = "speakers";
-    
+
     private async Task OnReceivedSlide(SlideDto slideDto)
     {
         try
         {
             _lastReceivedMessageTime = DateTime.UtcNow;
-            
+
             if (_speakerSlides.TryGetValue(slideDto.CurrentSlide, out var existingSlide))
             {
                 if (CurrentSlide.CurrentSlide != existingSlide.CurrentSlide)
@@ -72,13 +76,13 @@ public partial class PresentationViewModel : ObservableObject
                     CurrentSlidePage = existingSlide.CurrentSlide;
                     OnSlideReceivedHandler?.Invoke(existingSlide);
                 }
-                
+
                 // OnSlideReceivedHandler?.Invoke(existingSlide);
                 // SetCurrentSlide(existingSlide);
                 return;
             }
 
-            var pathToSlideFile = 
+            var pathToSlideFile =
                 await DownloadAndSaveSlide(slideDto.Url, slideDto.CurrentSlide, CancellationToken.None);
 
             var fileName = Path.GetFileName(pathToSlideFile);
@@ -100,11 +104,11 @@ public partial class PresentationViewModel : ObservableObject
             };
 
             _speakerSlides.Add(slideDto.CurrentSlide, newSlide);
-            
+
             CurrentSlide = newSlide;
             CurrentSlidePage = newSlide.CurrentSlide;
             OnSlideReceivedHandler?.Invoke(newSlide);
-            
+
             // SetCurrentSlide(newSlide);
 
             // IDEA:
@@ -126,7 +130,7 @@ public partial class PresentationViewModel : ObservableObject
     private async Task<string> DownloadAndSaveSlide(Uri url, int page, CancellationToken cancellationToken)
     {
         string pathToFile;
-        
+
         using (var fileStream = await _httpClient.GetStreamAsync(url, cancellationToken))
         {
             pathToFile = await FileHelper
@@ -195,9 +199,9 @@ public partial class PresentationViewModel : ObservableObject
         try
         {
             _speakerSlides.Clear();
-            
+
             // INITIAL SETUP
-            
+
             // events
             OnSlideReceivedHandler += SetCurrentSlideImageSource;
             OnSlideReceivedHandler += SetCurrentSlideNavigationLabel;
@@ -232,7 +236,7 @@ public partial class PresentationViewModel : ObservableObject
             // TODO:
         }
     }
-    
+
     [RelayCommand]
     private async Task OnBackButtonClicked()
     {
@@ -246,15 +250,15 @@ public partial class PresentationViewModel : ObservableObject
         {
             _slideListener.StopListen();
             _checkSpeakerActivityCts?.Cancel();
-            
+
             if (_checkSpeakerActivityTask is not null)
             {
                 await _checkSpeakerActivityTask;
             }
-            
+
             OnSlideReceivedHandler -= SetCurrentSlideImageSource;
             OnSlideReceivedHandler -= SetCurrentSlideNavigationLabel;
-            
+
             _speakerSlides.Clear();
         }
         catch (Exception e)

@@ -179,11 +179,6 @@ public partial class BrowserViewModel : ObservableObject
         }
     }
 
-    private void GetMockSlideLinks()
-    {
-        
-    }
-
     [RelayCommand]
     private async Task OnStartButtonClicked()
     {
@@ -192,11 +187,11 @@ public partial class BrowserViewModel : ObservableObject
             await Shell.Current.DisplayAlert("Nothing to broadcast", "Select presentation file to broadcast", "Ok");
             return;
         }
-        
+
         // TODO: upload to google drive
         var slidesDirPath = Path.Combine(Path.GetDirectoryName(SelectedItem.Path), "slides");
         var slidesLinks = await GoogleDriveHelper.UploadMock(SelectedItem.Name);
-        
+
         await Release();
         await Shell.Current.GoToAsync(
             $"{nameof(SpeakerPage)}",
@@ -211,7 +206,7 @@ public partial class BrowserViewModel : ObservableObject
     private void OnDisappearing()
     {
     }
-    
+
     private async Task Release()
     {
     }

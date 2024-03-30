@@ -15,13 +15,13 @@ public class SlideListener : ISlideListener
     private readonly IProximityListener _proximityListener;
     private readonly ICollection<BlePackageMessage> _speakerSlides;
     private readonly ConcurrentQueue<BlePackageMessage> _handlersQueue;
-    
+
     private Func<SlideDto, Task>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
-    
+
     private Task? _queueWorkerTask;
     private CancellationTokenSource _queueWorkerCts;
-    
+
     public SlideListener(
         ILogger<SlideListener> logger,
         IProximityListener proximityListener)
@@ -52,7 +52,7 @@ public class SlideListener : ISlideListener
             // TODO: add log
         }
     }
-    
+
     private async Task HandleMessage()
     {
         while (!_queueWorkerCts.Token.IsCancellationRequested)
@@ -60,20 +60,20 @@ public class SlideListener : ISlideListener
             var guid = Guid.NewGuid();
             var watch = System.Diagnostics.Stopwatch.StartNew();
             _logger.LogInformation("(Guid: {Id}): START. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-            
+
             if (!_handlersQueue.TryDequeue(out var package))
             {
                 // TODO: move to config
                 // await Task.Delay(TimeSpan.FromMilliseconds(100));
-                
+
                 _logger.LogInformation("(Guid: {Id}): COULDN'T dequeue element from queue", guid);
-                
+
                 _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
                 watch.Stop();
-                
+
                 continue;
             }
-            
+
             try
             {
                 var tmpPackage = _speakerSlides
@@ -84,13 +84,13 @@ public class SlideListener : ISlideListener
                     _logger.LogInformation("(Guid: {Id}): TryUpdateExistingPackage", guid);
                     _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
                     watch.Stop();
-                    
+
                     TryUpdateExistingPackage(package, tmpPackage);
                     continue;
                 }
-            
+
                 _speakerSlides.Add(package);
-            
+
                 var isAllTotalPagesEqual = _speakerSlides
                     .Select(it => it.TotalPages)
                     .Distinct()
@@ -101,11 +101,11 @@ public class SlideListener : ISlideListener
                     _logger.LogInformation("(Guid: {Id}): !isAllTotalPagesEqual", guid);
                     _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
                     watch.Stop();
-                    
+
                     // TODO: skip all and start again...
                     _speakerSlides.Clear();
                     _speakerSlides.Add(package);
-                    
+
                     continue;
                 }
 
@@ -114,10 +114,10 @@ public class SlideListener : ISlideListener
                     _logger.LogInformation("(Guid: {Id}): _speakerSlides.Count != package.TotalPages", guid);
                     _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
                     watch.Stop();
-                    
+
                     continue;
                 }
-            
+
                 var slideMsg = TryDeserializeSlideMessage();
 
                 if (slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
@@ -125,13 +125,13 @@ public class SlideListener : ISlideListener
                     _logger.LogInformation("(Guid: {Id}): slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute)", guid);
                     _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
                     watch.Stop();
-                    
+
                     // TODO: add log
                     continue;
                 }
-            
+
                 await InvokeHandler(slideMsg);
-                
+
                 _logger.LogInformation("(Guid: {Id}): HAPPY PATH InvokeHandler", guid);
                 _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
                 watch.Stop();
@@ -141,15 +141,15 @@ public class SlideListener : ISlideListener
                 _logger.LogInformation("(Guid: {Id}): Exception", guid);
                 _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
                 watch.Stop();
-                
+
                 // TODO: add log
-            
+
                 // TODO: clear нужно делать в случае, если упали на десериализации
                 _speakerSlides.Clear();
             }
         }
     }
-    
+
     private SlideMessage? TryDeserializeSlideMessage()
     {
         var payloads = _speakerSlides
@@ -160,7 +160,7 @@ public class SlideListener : ISlideListener
         var payloadStr = Encoding.ASCII.GetString(payloadBytes);
         var decompressSlideJson = payloadStr.DecompressJson();
         var slideMsg = JsonSerializer.Deserialize<SlideMessage>(decompressSlideJson);
-        
+
         return slideMsg;
     }
 
@@ -178,7 +178,7 @@ public class SlideListener : ISlideListener
         _speakerSlides.Clear();
         _speakerSlides.Add(package);
     }
-    
+
     private async Task InvokeHandler(SlideMessage slideMsg)
     {
         await MainThread.InvokeOnMainThreadAsync(async () =>
@@ -205,7 +205,7 @@ public class SlideListener : ISlideListener
         var payloads = array
             .Select(it => new { Payload = it, it.Length })
             .ToList();
-        
+
         var payloadLength = array.Sum(it => it.Length);
         var result = new byte[payloadLength];
 
@@ -216,7 +216,7 @@ public class SlideListener : ISlideListener
             p.Payload.CopyTo(result, lastIndex);
             lastIndex += p.Length;
         }
-        
+
         return result;
     }
 
@@ -229,14 +229,14 @@ public class SlideListener : ISlideListener
     {
         _speakerSlides.Clear();
         _handlersQueue.Clear();
-        
+
         _onListenResultHandler = listenResultCallback;
         _onListenFailedHandler = listenFailedCallback;
-        
+
         _queueWorkerCts = new CancellationTokenSource();
         _queueWorkerTask = Task.Run(HandleMessage, _queueWorkerCts.Token);
-        
-        _proximityListener.StartListenSpeaker(
+
+        _proximityListener.StartListenConcreteSpeaker(
             isExtended: isExtended,
             appId: appId,
             speakerIdentifier: speakerIdentifier,
@@ -247,12 +247,12 @@ public class SlideListener : ISlideListener
     public void StopListen()
     {
         _proximityListener.StopListen();
-        
+
         _queueWorkerCts.Cancel();
-        
+
         _speakerSlides.Clear();
         _handlersQueue.Clear();
-        
+
         _onListenResultHandler = null;
         _onListenFailedHandler = null;
     }

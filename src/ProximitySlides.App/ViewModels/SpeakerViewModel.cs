@@ -183,12 +183,22 @@ public partial class SpeakerViewModel : ObservableObject
 
     private async Task SendSlide(SlideMessage slideMsg, SpeakerIdentifier speakerId)
     {
-        var slideJson = JsonSerializer.Serialize(slideMsg);
-        var slideJsonCompress = slideJson.CompressJson();
+        var dataBytes = new byte[slideMsg.Url.Length + 2];
 
-        var dataBytes = Encoding.ASCII.GetBytes(slideJsonCompress);
+        var encodedUrlBytes = Encoding.ASCII.GetBytes(slideMsg.Url);
 
-        await _proximitySender.SendExtendedMessage(_appSettings.AppAdvertiserId, speakerId, dataBytes,
+        dataBytes[0] = slideMsg.TotalSlides;
+        dataBytes[1] = slideMsg.CurrentSlide;
+
+        for (int i = 0; i < encodedUrlBytes.Length; i++)
+        {
+            dataBytes[i + 2] = encodedUrlBytes[i];
+        }
+
+        await _proximitySender.SendMessage(
+            _appSettings.AppAdvertiserId,
+            speakerId,
+            dataBytes,
             CancellationToken.None);
     }
 

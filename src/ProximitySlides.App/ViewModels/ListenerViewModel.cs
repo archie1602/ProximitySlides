@@ -45,7 +45,7 @@ public partial class ListenerViewModel : ObservableObject
         _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
         Speakers = new ObservableCollection<string>();
     }
-    
+
     private void OnReceivedPackage(BlePackageMessage package)
     {
         lock (_lock)
@@ -119,7 +119,7 @@ public partial class ListenerViewModel : ObservableObject
                         .Select(it => it.Key.SpeakerId)
                         .ToList();
                 }
-                
+
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     Speakers.Clear();
@@ -158,14 +158,14 @@ public partial class ListenerViewModel : ObservableObject
         try
         {
             Speakers.Clear();
-            
+
             lock (_lock)
             {
                 _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
             }
 
             _proximityListener.StartListenAllSpeakers(
-                true,
+                false,
                 _appSettings.AppAdvertiserId,
                 OnReceivedPackage,
                 OnListenFailed);
@@ -178,27 +178,27 @@ public partial class ListenerViewModel : ObservableObject
                 $"An error occurred when starting the listen: {ex.Message}", "OK");
         }
     }
-    
+
     [RelayCommand]
     private async Task OnBackButtonClicked()
     {
         await Release();
         await Shell.Current.Navigation.PopAsync();
     }
-    
+
     [RelayCommand]
     private async Task OnSelectedTagChanged(string speakerId)
     {
         await Release();
         await Shell.Current.GoToAsync($"{nameof(PresentationPage)}?SpeakerId={speakerId}");
     }
-    
+
     private async Task Release()
     {
         try
         {
             _proximityListener.StopListen();
-            
+
             if (_clearInactiveSpeakersTask is not null)
             {
                 _clearInactiveSpeakersCts.Cancel();
@@ -210,8 +210,8 @@ public partial class ListenerViewModel : ObservableObject
                 _updateUiSpeakersListCts.Cancel();
                 await _updateUiSpeakersListTask;
             }
-            
-            _speakersPackages.Clear(); 
+
+            _speakersPackages.Clear();
             Speakers.Clear();
         }
         catch (Exception ex)

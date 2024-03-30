@@ -19,7 +19,7 @@ public class BleListener : IProximityListener
 
     private const int SpeakerIdLength = 2;
     private const string BaseUuid = "0000{0}-0000-1000-8000-00805F9B34FB";
-    
+
     private Action<BlePackageMessage>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
 
@@ -68,7 +68,7 @@ public class BleListener : IProximityListener
             _logger.LogError(ex, "Error occurred while listening the message");
         }
     }
-    
+
     private void OnScanFailed(BleScanFailure errorCode)
     {
         // TODO: think about this mapper layer
@@ -82,10 +82,10 @@ public class BleListener : IProximityListener
             BleScanFailure.ScanningTooFrequently => ListenFailed.ScanningTooFrequently,
             _ => throw new InvalidEnumArgumentException("Enum out of range")
         };
-        
+
         _onListenFailedHandler?.Invoke(listenType);
     }
-    
+
     private static string GetSenderUuid(string appId)
     {
         // TODO: добавить проверку чисел на шестнадцатеричность
@@ -93,11 +93,11 @@ public class BleListener : IProximityListener
         {
             throw new ArgumentException("AppId must consist of two hexadecimal numbers");
         }
-        
+
         return string.Format(BaseUuid, appId);
     }
-    
-    public void StartListenSpeaker(
+
+    public void StartListenConcreteSpeaker(
         bool isExtended,
         string appId,
         SpeakerIdentifier speakerIdentifier,
@@ -107,7 +107,7 @@ public class BleListener : IProximityListener
         _listenId = GetSenderUuid(appId);
         _speakerId = speakerIdentifier;
         _isSpeakerIdFilterEnabled = true;
-        
+
         var scanConfig = new ScanConfig(
             IsExtended: isExtended,
             Mode: BleScanMode.LowLatency,
@@ -115,7 +115,7 @@ public class BleListener : IProximityListener
 
         _onListenResultHandler = listenResultCallback;
         _onListenFailedHandler = listenFailedCallback;
-        
+
         _bleScanner.StartScan(scanConfig, OnScanResult, OnScanFailed);
     }
 
@@ -127,7 +127,7 @@ public class BleListener : IProximityListener
     {
         _listenId = GetSenderUuid(appId);
         _isSpeakerIdFilterEnabled = false;
-        
+
         var scanConfig = new ScanConfig(
             IsExtended: isExtended,
             Mode: BleScanMode.LowLatency,
@@ -135,7 +135,7 @@ public class BleListener : IProximityListener
 
         _onListenResultHandler = listenResultCallback;
         _onListenFailedHandler = listenFailedCallback;
-        
+
         _bleScanner.StartScan(scanConfig, OnScanResult, OnScanFailed);
     }
 
@@ -146,7 +146,7 @@ public class BleListener : IProximityListener
         _isSpeakerIdFilterEnabled = false;
         _listenId = null;
         _speakerId = null;
-        
+
         _onListenResultHandler = null;
         _onListenFailedHandler = null;
     }

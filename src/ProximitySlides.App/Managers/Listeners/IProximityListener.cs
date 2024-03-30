@@ -4,7 +4,7 @@ namespace ProximitySlides.App.Managers.Listeners;
 
 public interface IProximityListener
 {
-    void StartListenSpeaker(
+    void StartListenConcreteSpeaker(
         bool isExtended,
         string appId,
         SpeakerIdentifier speakerIdentifier,
