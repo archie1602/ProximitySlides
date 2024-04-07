@@ -199,7 +199,7 @@ public partial class PresentationViewModel(
             var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
 
             slideListener.StartListenSlides(
-                isExtended: true,
+                isExtended: false,
                 appId: _appSettings.AppAdvertiserId,
                 speakerIdentifier: speakerIdentifier,
                 listenResultCallback: OnReceivedSlide,

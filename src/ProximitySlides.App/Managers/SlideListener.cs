@@ -29,15 +29,22 @@ public class SlideListener(
         {
             var existsPackage = _speakerPackages.FirstOrDefault(it => it.CurrentPackage == package.CurrentPackage);
 
-            if (existsPackage is not null)
+            if (existsPackage is null)
+            {
+                _speakerPackages.Add(package);
+            }
+            else
             {
                 TryUpdateExistingPackage(package, existsPackage);
+            }
+
+            if (_speakerPackages.Count > package.TotalPackages)
+            {
+                _speakerPackages.Clear();
                 return;
             }
 
-            _speakerPackages.Add(package);
-
-            if (_speakerPackages.Count != package.TotalPackages)
+            if (_speakerPackages.Count < package.TotalPackages)
             {
                 return;
             }
