@@ -1,9 +1,14 @@
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+
+using ConcurrentCollections;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+
 using ProximitySlides.App.Applications;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Listeners;
@@ -22,13 +27,12 @@ public partial class ListenerViewModel : ObservableObject
     private Task? _clearInactiveSpeakersTask;
     private CancellationTokenSource _clearInactiveSpeakersCts = new();
 
-    private Task? _updateUiSpeakersListTask;
-    private CancellationTokenSource _updateUiSpeakersListCts = new();
+    // private Task? _updateUiSpeakersListTask;
+    // private CancellationTokenSource _updateUiSpeakersListCts = new();
 
-    private IDictionary<Speaker, ISet<BlePackageMessage>> _speakersPackages;
+    private readonly ConcurrentHashSet<Speaker> _speakersMessages = [];
 
-    [ObservableProperty]
-    private ObservableCollection<string> _speakers;
+    [ObservableProperty] private ObservableCollection<string> _speakers;
 
     private readonly object _lock = new();
 
@@ -42,7 +46,6 @@ public partial class ListenerViewModel : ObservableObject
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
         _listenerSettings = configuration.GetConfigurationSettings<ListenerSettings>();
 
-        _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
         Speakers = new ObservableCollection<string>();
     }
 
@@ -52,93 +55,140 @@ public partial class ListenerViewModel : ObservableObject
         {
             var speaker = new Speaker
             {
-                SpeakerId = package.SenderId,
+                SpeakerId = package.SpeakerId,
                 MaxPackages = package.TotalPages,
                 LastActivityTime = package.ReceivedAt
             };
 
-            var isSpeakerExists = _speakersPackages
-                .TryGetValue(speaker, out var speakerPackages);
+            _speakersMessages.Add(speaker);
 
-            if (!isSpeakerExists)
+            if (!Speakers.Contains(speaker.SpeakerId))
             {
-                speaker.CountReceivedPackages = 1;
-                speakerPackages = new SortedSet<BlePackageMessage>(comparer: new BlePackageComparator());
-                _speakersPackages.Add(speaker, speakerPackages);
+                Speakers.Add(speaker.SpeakerId);
             }
-            else
-            {
-                var speakers = _speakersPackages.Keys.ToList();
-                var currentSpeaker = speakers.FirstOrDefault(it => it.SpeakerId == package.SenderId);
-
-                if (currentSpeaker is not null)
-                {
-                    currentSpeaker.CountReceivedPackages = speakerPackages!.Count;
-                    currentSpeaker.MaxPackages = speaker.MaxPackages;
-                    currentSpeaker.LastActivityTime = speaker.LastActivityTime;
-                }
-            }
-
-            speakerPackages?.Add(package);
         }
     }
 
+    // private void OnReceivedPackage(BlePackageMessage package)
+    // {
+    //     lock (_lock)
+    //     {
+    //         var speaker = new Speaker
+    //         {
+    //             SpeakerId = package.SpeakerId,
+    //             MaxPackages = package.TotalPages,
+    //             LastActivityTime = package.ReceivedAt
+    //         };
+    //
+    //         var isSpeakerExists = _speakersPackages
+    //             .TryGetValue(speaker, out var speakerPackages);
+    //
+    //         if (!isSpeakerExists)
+    //         {
+    //             speaker.CountReceivedPackages = 1;
+    //             speakerPackages = new SortedSet<BlePackageMessage>(comparer: new BlePackageComparator());
+    //             _speakersPackages.Add(speaker, speakerPackages);
+    //         }
+    //         else
+    //         {
+    //             var speakers = _speakersPackages.Keys.ToList();
+    //             var currentSpeaker = speakers.FirstOrDefault(it => it.SpeakerId == package.SpeakerId);
+    //
+    //             if (currentSpeaker is not null)
+    //             {
+    //                 currentSpeaker.CountReceivedPackages = speakerPackages!.Count;
+    //                 currentSpeaker.MaxPackages = speaker.MaxPackages;
+    //                 currentSpeaker.LastActivityTime = speaker.LastActivityTime;
+    //             }
+    //         }
+    //
+    //         speakerPackages?.Add(package);
+    //     }
+    // }
+
+    [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
     private async Task ClearInactiveSpeakersJob()
     {
         while (!_clearInactiveSpeakersCts.Token.IsCancellationRequested)
         {
+            var removedSpeakers = new List<Speaker>();
+
+            if (_speakersMessages.Count == 0)
+            {
+                await Task.Delay(_listenerSettings.ClearInactiveSpeakersJobDelay);
+                continue;
+            }
+
             lock (_lock)
             {
-                var inactiveSpeakers = _speakersPackages
-                    .Where(it => DateTime.UtcNow - it.Key.LastActivityTime > _listenerSettings.MaxInactiveSpeakerTime)
-                    .Select(it => it.Key)
+                var currentTime = DateTime.UtcNow;
+
+                var inactiveSpeakers = _speakersMessages
+                    .Where(it => currentTime - it.LastActivityTime > _listenerSettings.MaxInactiveSpeakerTime)
                     .ToList();
 
                 foreach (var s in inactiveSpeakers)
                 {
-                    _speakersPackages.Remove(s);
+                    if (!_speakersMessages.TryRemove(s))
+                    {
+                        _logger.LogError("Не удалось удалить неактивного докладчика: {@InactiveSpeaker}", s);
+                        continue;
+                    }
+
+                    removedSpeakers.Add(s);
                 }
+            }
+
+            if (removedSpeakers.Count != 0)
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    foreach (var rs in removedSpeakers)
+                    {
+                        Speakers.Remove(rs.SpeakerId);
+                    }
+                });
             }
 
             await Task.Delay(_listenerSettings.ClearInactiveSpeakersJobDelay);
         }
     }
 
-    private async Task UpdateUiSpeakersListJob()
-    {
-        while (!_updateUiSpeakersListCts.Token.IsCancellationRequested)
-        {
-            try
-            {
-                List<string> speakersToDisplay;
-
-                lock (_lock)
-                {
-                    speakersToDisplay = _speakersPackages
-                        // .Where(it => it.Key.CountReceivedPackages == it.Key.MaxPackages)
-                        .Select(it => it.Key.SpeakerId)
-                        .ToList();
-                }
-
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    Speakers.Clear();
-
-                    foreach (var std in speakersToDisplay)
-                    {
-                        Speakers.Add(std);
-                    }
-                });
-
-                // TODO: change settings argument
-                await Task.Delay(_listenerSettings.ClearInactiveSpeakersJobDelay);
-            }
-            catch (Exception ex)
-            {
-                // TODO:
-            }
-        }
-    }
+    // private async Task UpdateUiSpeakersListJob()
+    // {
+    //     while (!_updateUiSpeakersListCts.Token.IsCancellationRequested)
+    //     {
+    //         try
+    //         {
+    //             List<string> speakersToDisplay;
+    //
+    //             lock (_lock)
+    //             {
+    //                 speakersToDisplay = _speakersPackages
+    //                     // .Where(it => it.Key.CountReceivedPackages == it.Key.MaxPackages)
+    //                     .Select(it => it.Key.SpeakerId)
+    //                     .ToList();
+    //             }
+    //
+    //             await MainThread.InvokeOnMainThreadAsync(() =>
+    //             {
+    //                 Speakers.Clear();
+    //
+    //                 foreach (var std in speakersToDisplay)
+    //                 {
+    //                     Speakers.Add(std);
+    //                 }
+    //             });
+    //
+    //             // TODO: change settings argument
+    //             await Task.Delay(_listenerSettings.ClearInactiveSpeakersJobDelay);
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             // TODO:
+    //         }
+    //     }
+    // }
 
     private void OnListenFailed(ListenFailed errorCode)
     {
@@ -150,19 +200,16 @@ public partial class ListenerViewModel : ObservableObject
     private void OnAppearing()
     {
         _clearInactiveSpeakersCts = new CancellationTokenSource();
-        _updateUiSpeakersListCts = new CancellationTokenSource();
+        // _updateUiSpeakersListCts = new CancellationTokenSource();
 
         _clearInactiveSpeakersTask = Task.Run(ClearInactiveSpeakersJob, _clearInactiveSpeakersCts.Token);
-        _updateUiSpeakersListTask = Task.Run(UpdateUiSpeakersListJob, _updateUiSpeakersListCts.Token);
+        // _updateUiSpeakersListTask = Task.Run(UpdateUiSpeakersListJob, _updateUiSpeakersListCts.Token);
+
+        _speakersMessages.Clear();
 
         try
         {
             Speakers.Clear();
-
-            lock (_lock)
-            {
-                _speakersPackages = new ConcurrentDictionary<Speaker, ISet<BlePackageMessage>>();
-            }
 
             _proximityListener.StartListenAllSpeakers(
                 false,
@@ -193,6 +240,7 @@ public partial class ListenerViewModel : ObservableObject
         await Shell.Current.GoToAsync($"{nameof(PresentationPage)}?SpeakerId={speakerId}");
     }
 
+    [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
     private async Task Release()
     {
         try
@@ -201,17 +249,18 @@ public partial class ListenerViewModel : ObservableObject
 
             if (_clearInactiveSpeakersTask is not null)
             {
-                _clearInactiveSpeakersCts.Cancel();
+                await _clearInactiveSpeakersCts.CancelAsync();
                 await _clearInactiveSpeakersTask;
             }
 
-            if (_updateUiSpeakersListTask is not null)
-            {
-                _updateUiSpeakersListCts.Cancel();
-                await _updateUiSpeakersListTask;
-            }
+            // if (_updateUiSpeakersListTask is not null)
+            // {
+            //     await _updateUiSpeakersListCts.CancelAsync();
+            //     await _updateUiSpeakersListTask;
+            // }
 
-            _speakersPackages.Clear();
+            _speakersMessages.Clear();
+
             Speakers.Clear();
         }
         catch (Exception ex)

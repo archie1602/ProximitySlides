@@ -1,18 +1,18 @@
 using System.ComponentModel;
 using System.Text;
+
 using Android.Bluetooth.LE;
 using Android.OS;
+
 using Microsoft.Extensions.Logging;
+
 using ProximitySlides.App.Models;
 using ProximitySlides.Core.Managers.Scanners;
 
 namespace ProximitySlides.App.Managers.Listeners;
 
-public class BleListener : IProximityListener
+public class BleListener(ILogger<BleListener> logger, IBleScanner bleScanner) : IProximityListener
 {
-    private readonly ILogger<BleListener> _logger;
-    private readonly IBleScanner _bleScanner;
-
     private bool _isSpeakerIdFilterEnabled;
     private string? _listenId;
     private SpeakerIdentifier? _speakerId;
@@ -22,12 +22,6 @@ public class BleListener : IProximityListener
 
     private Action<BlePackageMessage>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
-
-    public BleListener(ILogger<BleListener> logger, IBleScanner bleScanner)
-    {
-        _logger = logger;
-        _bleScanner = bleScanner;
-    }
 
     private void OnScanResult(BleScanCallbackType callbackType, ScanResult? result)
     {
@@ -41,22 +35,18 @@ public class BleListener : IProximityListener
                 return;
             }
 
-            var speakerIdBytes = bytes[0..SpeakerIdLength];
-            var speakerId = Encoding.ASCII.GetString(speakerIdBytes);
+            var speakerId = Encoding.ASCII.GetString(bytes[0..SpeakerIdLength]);
 
             if (_isSpeakerIdFilterEnabled && speakerId != _speakerId?.SpeakerId)
             {
                 return;
             }
 
-            var currentPage = (int)bytes[SpeakerIdLength];
-            var totalPages = (int)bytes[SpeakerIdLength + 1];
-
             var package = new BlePackageMessage
             {
-                SenderId = speakerId,
-                CurrentPage = currentPage,
-                TotalPages = totalPages,
+                SpeakerId = speakerId,
+                CurrentPage = bytes[SpeakerIdLength],
+                TotalPages = bytes[SpeakerIdLength + 1],
                 Payload = bytes[(SpeakerIdLength + 2)..bytes.Length],
                 ReceivedAt = DateTime.UtcNow
             };
@@ -65,7 +55,7 @@ public class BleListener : IProximityListener
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while listening the message");
+            logger.LogError(ex, "Error occurred while listening the message");
         }
     }
 
@@ -116,7 +106,7 @@ public class BleListener : IProximityListener
         _onListenResultHandler = listenResultCallback;
         _onListenFailedHandler = listenFailedCallback;
 
-        _bleScanner.StartScan(scanConfig, OnScanResult, OnScanFailed);
+        bleScanner.StartScan(scanConfig, OnScanResult, OnScanFailed);
     }
 
     public void StartListenAllSpeakers(
@@ -136,12 +126,12 @@ public class BleListener : IProximityListener
         _onListenResultHandler = listenResultCallback;
         _onListenFailedHandler = listenFailedCallback;
 
-        _bleScanner.StartScan(scanConfig, OnScanResult, OnScanFailed);
+        bleScanner.StartScan(scanConfig, OnScanResult, OnScanFailed);
     }
 
     public void StopListen()
     {
-        _bleScanner.StopScan();
+        bleScanner.StopScan();
 
         _isSpeakerIdFilterEnabled = false;
         _listenId = null;

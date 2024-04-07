@@ -2,7 +2,7 @@ namespace ProximitySlides.App.Models;
 
 public class BlePackageMessage
 {
-    public required string SenderId { get; set; }
+    public required string SpeakerId { get; set; }
     public required int CurrentPage { get; set; }
     public required int TotalPages { get; set; }
     public required byte[] Payload { get; set; }
@@ -41,7 +41,7 @@ public sealed class BlePackageEqualityComparer : IEqualityComparer<BlePackageMes
         {
             return false;
         }
-        
+
         return x.CurrentPage == y.CurrentPage;
     }
 
