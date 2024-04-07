@@ -190,7 +190,7 @@ public partial class BrowserViewModel : ObservableObject
 
         // TODO: upload to google drive
         var slidesDirPath = Path.Combine(Path.GetDirectoryName(SelectedItem.Path), "slides");
-        var slidesLinks = await GoogleDriveHelper.UploadMock(SelectedItem.Name);
+        var slidesIds = await GoogleDriveHelper.UploadMock(SelectedItem.Name);
 
         await Release();
         await Shell.Current.GoToAsync(
@@ -198,7 +198,7 @@ public partial class BrowserViewModel : ObservableObject
             new Dictionary<string, object>
             {
                 ["Presentation"] = SelectedItem,
-                ["SlidesLinks"] = slidesLinks
+                ["SlidesIds"] = slidesIds
             });
     }
 

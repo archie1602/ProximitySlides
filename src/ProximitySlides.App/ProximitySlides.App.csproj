@@ -120,6 +120,7 @@
 
 
     <ItemGroup>
+        <Folder Include="Mappers\" />
         <Folder Include="Platforms\Android\Managers\"/>
     </ItemGroup>
 

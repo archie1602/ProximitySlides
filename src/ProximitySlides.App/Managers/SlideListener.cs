@@ -2,6 +2,9 @@
 using System.Text;
 using System.Text.Json;
 using ConcurrentCollections;
+
+using Java.Net;
+
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Managers.Listeners;
 using ProximitySlides.App.Models;
@@ -118,9 +121,10 @@ public class SlideListener : ISlideListener
                     continue;
                 }
 
-                var slideMsg = TryDeserializeSlideMessage();
+                var slideMsg = TryDecodeSlideMessage();
 
-                if (slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
+
+                if (!Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
                 {
                     _logger.LogInformation("(Guid: {Id}): slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute)", guid);
                     _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
@@ -150,16 +154,25 @@ public class SlideListener : ISlideListener
         }
     }
 
-    private SlideMessage? TryDeserializeSlideMessage()
+    private SlideMessage TryDecodeSlideMessage()
     {
         var payloads = _speakerSlides
             .Select(it => it.Payload)
             .ToList();
 
         var payloadBytes = ConcatArrays(payloads);
-        var payloadStr = Encoding.ASCII.GetString(payloadBytes);
-        var decompressSlideJson = payloadStr.DecompressJson();
-        var slideMsg = JsonSerializer.Deserialize<SlideMessage>(decompressSlideJson);
+
+        var totalSlides = payloadBytes[0];
+        var currentSlide = payloadBytes[1];
+
+        var fileId = Encoding.ASCII.GetString(payloadBytes[2..]);
+
+        var slideMsg = new SlideMessage
+        {
+            Url = $"https://share.m4u.app/v1/files?id={fileId}",
+            CurrentSlide = currentSlide,
+            TotalSlides = totalSlides
+        };
 
         return slideMsg;
     }

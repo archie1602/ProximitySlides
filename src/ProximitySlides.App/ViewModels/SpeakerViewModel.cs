@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
-using System.Text.Json;
+
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
@@ -8,14 +8,12 @@ using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Speakers;
-using ProximitySlides.App.Mappers;
 using ProximitySlides.App.Models;
-using ProximitySlides.Core.Extensions;
 
 namespace ProximitySlides.App.ViewModels;
 
 [QueryProperty(nameof(Presentation), nameof(Presentation))]
-[QueryProperty(nameof(SlidesLinks), nameof(SlidesLinks))]
+[QueryProperty(nameof(SlidesIds), nameof(SlidesIds))]
 public partial class SpeakerViewModel : ObservableObject
 {
     private const int BroadcastPeriodBetweenCircles = 500;
@@ -24,6 +22,7 @@ public partial class SpeakerViewModel : ObservableObject
     private readonly IProximitySender _proximitySender;
     private readonly AppSettings _appSettings;
 
+    // current page number -> slide
     private readonly IDictionary<int, SpeakerSlide> _slides;
 
     private Task? _broadcastingSlidesTask;
@@ -59,7 +58,7 @@ public partial class SpeakerViewModel : ObservableObject
     private StoredPresentation _presentation;
 
     [ObservableProperty]
-    private Dictionary<int, string> _slidesLinks;
+    private Dictionary<int, string> _slidesIds;
 
     [ObservableProperty]
     private string _speakerIdText;
@@ -77,13 +76,13 @@ public partial class SpeakerViewModel : ObservableObject
     {
         var slides = new Dictionary<int, SpeakerSlide>();
 
-        foreach ((int page, string link) in SlidesLinks)
+        foreach ((int page, string fileId) in SlidesIds)
         {
             slides.Add(page, new SpeakerSlide
             {
-                Url = new Uri(link),
+                FileId = fileId,
                 CurrentSlide = page,
-                TotalSlides = SlidesLinks.Count,
+                TotalSlides = SlidesIds.Count,
                 Storage = new SlideStorage
                 {
                     FileName = $"slide_{page}",
@@ -168,8 +167,7 @@ public partial class SpeakerViewModel : ObservableObject
                     continue;
                 }
 
-                var slideMsg = SlideMapper.Map(currentSlide);
-                await SendSlide(slideMsg, _speakerId);
+                await SendSlide(currentSlide, _speakerId);
 
                 // TODO: move to config
                 await Task.Delay(TimeSpan.FromMilliseconds(BroadcastPeriodBetweenCircles), _broadcastingSlidesCts.Token);
@@ -181,14 +179,14 @@ public partial class SpeakerViewModel : ObservableObject
         }
     }
 
-    private async Task SendSlide(SlideMessage slideMsg, SpeakerIdentifier speakerId)
+    private async Task SendSlide(SpeakerSlide speakerSlide, SpeakerIdentifier speakerId)
     {
-        var dataBytes = new byte[slideMsg.Url.Length + 2];
+        var dataBytes = new byte[speakerSlide.FileId.Length + 2];
 
-        var encodedUrlBytes = Encoding.ASCII.GetBytes(slideMsg.Url);
+        var encodedUrlBytes = Encoding.ASCII.GetBytes(speakerSlide.FileId);
 
-        dataBytes[0] = slideMsg.TotalSlides;
-        dataBytes[1] = slideMsg.CurrentSlide;
+        dataBytes[0] = (byte)speakerSlide.TotalSlides;
+        dataBytes[1] = (byte)speakerSlide.CurrentSlide;
 
         for (int i = 0; i < encodedUrlBytes.Length; i++)
         {

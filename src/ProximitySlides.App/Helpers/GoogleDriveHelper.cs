@@ -20,7 +20,7 @@ public class GoogleDriveHelper
             ClientId = id,
             ClientSecret = secret
         };
-        
+
         var credPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal),
             ".credentials/apiName");
 
@@ -92,7 +92,7 @@ public class GoogleDriveHelper
         switch (presentationName)
         {
             case "CSharp dotnet basics.pdf":
-                
+
                 links = new Dictionary<int, string>
                 {
                     { 1, "https://drive.google.com/uc?id=1DB1BeeHDcTJlUFk_XlydaQiJq5XOTzNh" },
@@ -111,24 +111,24 @@ public class GoogleDriveHelper
                     { 14, "https://drive.google.com/uc?id=10GSWXaKfT6K6Z_ax-qZFvtRvqbj-uOXg" },
                     { 15, "https://drive.google.com/uc?id=13vfnmxA-9xLawO6M5Ao9dh8U0r7ei-Uh" }
                 };
-                
+
                 break;
-            
+
             case "getting_started_docker.pdf":
 
                 links = new Dictionary<int, string>
                 {
-                    { 1, "https://drive.google.com/uc?id=1DlDpp_C_U19cDGm5dym5ebiF0kzfcjQS" },
-                    { 2, "https://drive.google.com/uc?id=1QoiHh5mTSA-x_wJa1do3f9S--IUus9o-" },
-                    { 3, "https://drive.google.com/uc?id=1enPwN06GTsi6y3r4K15-lAOBPeK-qrRJ" },
-                    { 4, "https://drive.google.com/uc?id=16hox9QQA5nPIviFVwcxGXKRboyHPUmS2" },
-                    { 5, "https://drive.google.com/uc?id=1hBMdw_ws_WfktUGBIp7FjzDsLtB4Pm-F" },
-                    { 6, "https://drive.google.com/uc?id=1ZoL5ZsUsT24jDmsIWWS-JEznFkkV_AMh" },
-                    { 7, "https://drive.google.com/uc?id=1SeWShuUZqKPg2BaRtUIY644siPSiY4HD" }
+                    { 1, "a1" },
+                    { 2, "a2" },
+                    { 3, "a3" },
+                    { 4, "a4" },
+                    { 5, "a5" },
+                    { 6, "a6" },
+                    { 7, "a7" }
                 };
-                
+
                 break;
-            
+
             default:
 
                 links = new Dictionary<int, string>
@@ -144,19 +144,19 @@ public class GoogleDriveHelper
                     { 9, "https://drive.google.com/uc?id=1qOl5eYj_Vna78bXdXjvFK6xCwGuYJpJP" },
                     { 10, "https://drive.google.com/uc?id=1RVAkkBfBiTa81TPrUvuqSJG9pRora--l" }
                 };
-                
+
                 break;
         }
-        
+
         return links;
     }
 
     private static async Task<(int page, string link)> UploadAndGetLink(string filePath, DriveService service, DriveFile driveFile)
     {
         var mimeType = "image/png";
-        
+
         await using var fileStream = File.OpenRead(filePath);
-        
+
         var pageStr = Regex.Match(Path.GetFileName(filePath), @"\d+").Value;
         var page = int.Parse(pageStr);
 
@@ -165,7 +165,7 @@ public class GoogleDriveHelper
             // TODO:
             throw new Exception();
         }
-        
+
         var mediaUploadRequest = service.Files.Create(driveFile, fileStream, mimeType);
         mediaUploadRequest.Fields = "id, webContentLink";
 
@@ -183,7 +183,7 @@ public class GoogleDriveHelper
             var link = mediaUploadRequest.ResponseBody.WebContentLink;
             return (page, link);
         }
-        
+
         // TODO:
         throw new Exception();
     }
