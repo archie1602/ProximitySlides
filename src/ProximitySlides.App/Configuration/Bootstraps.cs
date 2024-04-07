@@ -11,8 +11,6 @@ public static class Bootstraps
     [UsedImplicitly]
     public static IServiceCollection AddApp(this IServiceCollection services, IConfiguration configuration)
     {
-        //services.Configure<ListenerSettings>(_ => configuration.GetSection(ListenerSettings.SectionName).Get<ListenerSettings>());
-
         return services
             .AddPages()
             .AddViewModels();
@@ -28,7 +26,7 @@ public static class Bootstraps
         services.AddSingleton<TestViewModel>();
 
         services.AddSingleton<ISlideListener, SlideListener>();
-        
+
         return services;
     }
 
@@ -36,14 +34,14 @@ public static class Bootstraps
     {
         // main tabs of the app
         services.AddTransient<MainPage>();
-        
+
         // pages that are navigated to
         services.AddTransient<SpeakerPage>();
         services.AddTransient<ListenerPage>();
         services.AddTransient<PresentationPage>();
         services.AddTransient<BrowserPage>();
         services.AddTransient<TestPage>();
-        
+
         return services;
     }
 }

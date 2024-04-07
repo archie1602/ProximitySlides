@@ -1,6 +1,8 @@
 ﻿namespace ProximitySlides.App.Models;
 
-public class ListenerSlide : BaseSlide
-{
-    public required TimeSpan TimeToDeliver { get; set; }
-}
+public record ListenerSlide(
+    Uri Url,
+    int TotalSlides,
+    int CurrentSlide,
+    SlideStorage Storage,
+    TimeSpan TimeToDeliver);

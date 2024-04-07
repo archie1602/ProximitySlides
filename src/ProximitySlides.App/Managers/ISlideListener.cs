@@ -6,8 +6,8 @@ public interface ISlideListener
         bool isExtended,
         string appId,
         SpeakerIdentifier speakerIdentifier,
-        Func<SlideDto, Task>? listenResultCallback,
+        Func<SlideMessage, Task>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback);
-    
+
     void StopListen();
 }

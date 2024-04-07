@@ -45,8 +45,8 @@ public class BleListener(ILogger<BleListener> logger, IBleScanner bleScanner) : 
             var package = new BlePackageMessage
             {
                 SpeakerId = speakerId,
-                CurrentPage = bytes[SpeakerIdLength],
-                TotalPages = bytes[SpeakerIdLength + 1],
+                CurrentPackage = bytes[SpeakerIdLength],
+                TotalPackages = bytes[SpeakerIdLength + 1],
                 Payload = bytes[(SpeakerIdLength + 2)..bytes.Length],
                 ReceivedAt = DateTime.UtcNow
             };

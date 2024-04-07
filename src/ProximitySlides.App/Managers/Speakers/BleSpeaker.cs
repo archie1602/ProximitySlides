@@ -6,7 +6,7 @@ using ProximitySlides.Core.Managers.Advertisers.Extended;
 
 namespace ProximitySlides.App.Managers.Speakers;
 
-public class BleSpeaker : IProximitySender
+public class BleSpeaker : IProximitySpeaker
 {
     private static readonly TimeSpan BroadcastDelayBetweenPackages = TimeSpan.FromMilliseconds(100);
     private const int BlePacketPayloadLength = 23;

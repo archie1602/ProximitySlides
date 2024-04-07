@@ -2,9 +2,9 @@ namespace ProximitySlides.App.Models;
 
 public class BlePackageMessage
 {
-    public required string SpeakerId { get; set; }
-    public required int CurrentPage { get; set; }
-    public required int TotalPages { get; set; }
+    public required string SpeakerId { get; init; }
+    public required int CurrentPackage { get; set; }
+    public required int TotalPackages { get; set; }
     public required byte[] Payload { get; set; }
     public required DateTime ReceivedAt { get; set; }
 }
@@ -14,7 +14,7 @@ public class BlePackageComparator : Comparer<BlePackageMessage>
     public override int Compare(BlePackageMessage? x, BlePackageMessage? y)
     {
         // TODO: fix nullability
-        return x.CurrentPage.CompareTo(y.CurrentPage);
+        return x.CurrentPackage.CompareTo(y.CurrentPackage);
     }
 }
 
@@ -42,11 +42,11 @@ public sealed class BlePackageEqualityComparer : IEqualityComparer<BlePackageMes
             return false;
         }
 
-        return x.CurrentPage == y.CurrentPage;
+        return x.CurrentPackage == y.CurrentPackage;
     }
 
     public int GetHashCode(BlePackageMessage obj)
     {
-        return obj.CurrentPage.GetHashCode();
+        return obj.CurrentPackage.GetHashCode();
     }
 }

@@ -27,12 +27,10 @@ public partial class ListenerViewModel : ObservableObject
     private Task? _clearInactiveSpeakersTask;
     private CancellationTokenSource _clearInactiveSpeakersCts = new();
 
-    // private Task? _updateUiSpeakersListTask;
-    // private CancellationTokenSource _updateUiSpeakersListCts = new();
-
     private readonly ConcurrentHashSet<Speaker> _speakersMessages = [];
 
-    [ObservableProperty] private ObservableCollection<string> _speakers;
+    [ObservableProperty]
+    private ObservableCollection<string> _speakers;
 
     private readonly object _lock = new();
 
@@ -46,7 +44,7 @@ public partial class ListenerViewModel : ObservableObject
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
         _listenerSettings = configuration.GetConfigurationSettings<ListenerSettings>();
 
-        Speakers = new ObservableCollection<string>();
+        Speakers = [];
     }
 
     private void OnReceivedPackage(BlePackageMessage package)
@@ -56,7 +54,7 @@ public partial class ListenerViewModel : ObservableObject
             var speaker = new Speaker
             {
                 SpeakerId = package.SpeakerId,
-                MaxPackages = package.TotalPages,
+                MaxPackages = package.TotalPackages,
                 LastActivityTime = package.ReceivedAt
             };
 
@@ -68,43 +66,6 @@ public partial class ListenerViewModel : ObservableObject
             }
         }
     }
-
-    // private void OnReceivedPackage(BlePackageMessage package)
-    // {
-    //     lock (_lock)
-    //     {
-    //         var speaker = new Speaker
-    //         {
-    //             SpeakerId = package.SpeakerId,
-    //             MaxPackages = package.TotalPages,
-    //             LastActivityTime = package.ReceivedAt
-    //         };
-    //
-    //         var isSpeakerExists = _speakersPackages
-    //             .TryGetValue(speaker, out var speakerPackages);
-    //
-    //         if (!isSpeakerExists)
-    //         {
-    //             speaker.CountReceivedPackages = 1;
-    //             speakerPackages = new SortedSet<BlePackageMessage>(comparer: new BlePackageComparator());
-    //             _speakersPackages.Add(speaker, speakerPackages);
-    //         }
-    //         else
-    //         {
-    //             var speakers = _speakersPackages.Keys.ToList();
-    //             var currentSpeaker = speakers.FirstOrDefault(it => it.SpeakerId == package.SpeakerId);
-    //
-    //             if (currentSpeaker is not null)
-    //             {
-    //                 currentSpeaker.CountReceivedPackages = speakerPackages!.Count;
-    //                 currentSpeaker.MaxPackages = speaker.MaxPackages;
-    //                 currentSpeaker.LastActivityTime = speaker.LastActivityTime;
-    //             }
-    //         }
-    //
-    //         speakerPackages?.Add(package);
-    //     }
-    // }
 
     [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
     private async Task ClearInactiveSpeakersJob()
@@ -154,42 +115,6 @@ public partial class ListenerViewModel : ObservableObject
         }
     }
 
-    // private async Task UpdateUiSpeakersListJob()
-    // {
-    //     while (!_updateUiSpeakersListCts.Token.IsCancellationRequested)
-    //     {
-    //         try
-    //         {
-    //             List<string> speakersToDisplay;
-    //
-    //             lock (_lock)
-    //             {
-    //                 speakersToDisplay = _speakersPackages
-    //                     // .Where(it => it.Key.CountReceivedPackages == it.Key.MaxPackages)
-    //                     .Select(it => it.Key.SpeakerId)
-    //                     .ToList();
-    //             }
-    //
-    //             await MainThread.InvokeOnMainThreadAsync(() =>
-    //             {
-    //                 Speakers.Clear();
-    //
-    //                 foreach (var std in speakersToDisplay)
-    //                 {
-    //                     Speakers.Add(std);
-    //                 }
-    //             });
-    //
-    //             // TODO: change settings argument
-    //             await Task.Delay(_listenerSettings.ClearInactiveSpeakersJobDelay);
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             // TODO:
-    //         }
-    //     }
-    // }
-
     private void OnListenFailed(ListenFailed errorCode)
     {
         _logger.LogError("Scan resulted in an error with code {ScanErrorCode}", errorCode.ToString());
@@ -200,10 +125,7 @@ public partial class ListenerViewModel : ObservableObject
     private void OnAppearing()
     {
         _clearInactiveSpeakersCts = new CancellationTokenSource();
-        // _updateUiSpeakersListCts = new CancellationTokenSource();
-
         _clearInactiveSpeakersTask = Task.Run(ClearInactiveSpeakersJob, _clearInactiveSpeakersCts.Token);
-        // _updateUiSpeakersListTask = Task.Run(UpdateUiSpeakersListJob, _updateUiSpeakersListCts.Token);
 
         _speakersMessages.Clear();
 
@@ -252,12 +174,6 @@ public partial class ListenerViewModel : ObservableObject
                 await _clearInactiveSpeakersCts.CancelAsync();
                 await _clearInactiveSpeakersTask;
             }
-
-            // if (_updateUiSpeakersListTask is not null)
-            // {
-            //     await _updateUiSpeakersListCts.CancelAsync();
-            //     await _updateUiSpeakersListTask;
-            // }
 
             _speakersMessages.Clear();
 

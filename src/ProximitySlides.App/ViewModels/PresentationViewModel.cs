@@ -11,39 +11,27 @@ using ProximitySlides.App.Models;
 namespace ProximitySlides.App.ViewModels;
 
 [QueryProperty(nameof(SpeakerId), nameof(SpeakerId))]
-public partial class PresentationViewModel : ObservableObject
+public partial class PresentationViewModel(
+    ILogger<PresentationViewModel> logger,
+    IConfiguration configuration,
+    ISlideListener slideListener)
+    : ObservableObject
 {
-    private readonly ILogger<PresentationViewModel> _logger;
-    private readonly ISlideListener _slideListener;
-    private readonly AppSettings _appSettings;
+    private readonly AppSettings _appSettings = configuration.GetConfigurationSettings<AppSettings>();
+    private readonly PresentationSettings _presentationSettings = configuration.GetConfigurationSettings<PresentationSettings>();
 
     // slide number -> slide
-    private readonly IDictionary<int, ListenerSlide> _speakerSlides;
+    private readonly ConcurrentDictionary<int, ListenerSlide> _speakerSlides = new();
 
     private event Action<ListenerSlide>? OnSlideReceivedHandler;
 
     private Task? _checkSpeakerActivityTask;
-    private CancellationTokenSource? _checkSpeakerActivityCts;
+    private CancellationTokenSource? _checkSpeakerActivityCts = new();
 
-    private readonly HttpClient _httpClient;
+    private readonly HttpClient _httpClient = new();
 
-    private string _speakerDirectoryName;
-    private string _speakerSlidesStoragePath;
-
-    public PresentationViewModel(
-        ILogger<PresentationViewModel> logger,
-        IConfiguration configuration,
-        ISlideListener slideListener)
-    {
-        _logger = logger;
-        _slideListener = slideListener;
-        _appSettings = configuration.GetConfigurationSettings<AppSettings>();
-        _httpClient = new HttpClient();
-
-        _speakerSlides = new ConcurrentDictionary<int, ListenerSlide>();
-
-        _checkSpeakerActivityCts = new CancellationTokenSource();
-    }
+    private string _speakerDirectoryName = null!;
+    private string _speakerSlidesStoragePath = null!;
 
     [ObservableProperty]
     private int _currentSlidePage;
@@ -62,37 +50,36 @@ public partial class PresentationViewModel : ObservableObject
     private const string SlideNamePattern = "slide_{0}.pdf";
     private const string BaseSpeakersDirectoryName = "speakers";
 
-    private async Task OnReceivedSlide(SlideDto slideDto)
+    private async Task OnReceivedSlide(SlideMessage slideMsg)
     {
         try
         {
             _lastReceivedMessageTime = DateTime.UtcNow;
 
-            if (_speakerSlides.TryGetValue(slideDto.CurrentSlide, out var existingSlide))
+            if (_speakerSlides.TryGetValue(slideMsg.CurrentSlide, out var existingSlide))
             {
-                if (CurrentSlide.CurrentSlide != existingSlide.CurrentSlide)
+                if (CurrentSlide.CurrentSlide == existingSlide.CurrentSlide)
                 {
-                    CurrentSlide = existingSlide;
-                    CurrentSlidePage = existingSlide.CurrentSlide;
-                    OnSlideReceivedHandler?.Invoke(existingSlide);
+                    return;
                 }
 
-                // OnSlideReceivedHandler?.Invoke(existingSlide);
-                // SetCurrentSlide(existingSlide);
+                CurrentSlide = existingSlide;
+                CurrentSlidePage = existingSlide.CurrentSlide;
+                OnSlideReceivedHandler?.Invoke(existingSlide);
+
                 return;
             }
 
             var pathToSlideFile =
-                await DownloadAndSaveSlide(slideDto.Url, slideDto.CurrentSlide, CancellationToken.None);
+                await DownloadAndSaveSlide(slideMsg.Url, slideMsg.CurrentSlide, CancellationToken.None);
 
             var fileName = Path.GetFileName(pathToSlideFile);
 
-            var newSlide = new ListenerSlide
-            {
-                Url = slideDto.Url,
-                CurrentSlide = slideDto.CurrentSlide,
-                TotalSlides = slideDto.TotalSlides,
-                Storage = new SlideStorage
+            var newSlide = new ListenerSlide(
+                Url: slideMsg.Url,
+                TotalSlides: slideMsg.TotalSlides,
+                CurrentSlide: slideMsg.CurrentSlide,
+                Storage: new SlideStorage
                 {
                     FileName = fileName,
                     BaseSpeakersDirectory = BaseSpeakersDirectoryName,
@@ -100,46 +87,36 @@ public partial class PresentationViewModel : ObservableObject
                     AbsoluteStoragePath = pathToSlideFile,
                     RelativeStoragePath = Path.Combine(BaseSpeakersDirectoryName, _speakerDirectoryName, fileName)
                 },
-                TimeToDeliver = slideDto.TimeToDeliver
-            };
+                TimeToDeliver: slideMsg.TimeToDeliver);
 
-            _speakerSlides.Add(slideDto.CurrentSlide, newSlide);
+            if (!_speakerSlides.TryAdd(slideMsg.CurrentSlide, newSlide))
+            {
+                throw new InvalidOperationException("Couldn't add a new slide to the dictionary");
+            }
 
             CurrentSlide = newSlide;
             CurrentSlidePage = newSlide.CurrentSlide;
             OnSlideReceivedHandler?.Invoke(newSlide);
-
-            // SetCurrentSlide(newSlide);
-
-            // IDEA:
-
-            /*
-             * if (slideDto.TimeToDeliver > определенного порога)
-             * => доставка происходит долго и с перебоями
-             * => можно сделать вывод, что пользователь находится далеко
-             * Note: также еще нужна Job'a, которая будет смотреть, когда был получен последний слайд
-             * и если обновления давно не происходило, тогда можно сделать вывод о том, что speaker отключился
-             */
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            // TODO:
+            logger.LogError(
+                ex,
+                "An error occurred while trying to read the slide: {ErrorMessage}",
+                ex.Message);
         }
     }
 
     private async Task<string> DownloadAndSaveSlide(Uri url, int page, CancellationToken cancellationToken)
     {
-        string pathToFile;
+        await using var fileStream = await _httpClient.GetStreamAsync(url, cancellationToken);
 
-        using (var fileStream = await _httpClient.GetStreamAsync(url, cancellationToken))
-        {
-            pathToFile = await FileHelper
-                .SaveFileAsync(
-                    fileStream,
-                    _speakerSlidesStoragePath,
-                    string.Format(SlideNamePattern, page),
-                    cancellationToken);
-        }
+        var pathToFile = await FileHelper
+            .SaveFileAsync(
+                fileStream,
+                _speakerSlidesStoragePath,
+                string.Format(SlideNamePattern, page),
+                cancellationToken);
 
         return pathToFile;
     }
@@ -156,16 +133,13 @@ public partial class PresentationViewModel : ObservableObject
 
     private async Task CheckSpeakerActivityJob()
     {
-        // TODO: move to config
-        var maxInactiveSpeakerTime = TimeSpan.FromSeconds(5);
-
-        while (!_checkSpeakerActivityCts.Token.IsCancellationRequested)
+        while (_checkSpeakerActivityCts is { Token.IsCancellationRequested: false })
         {
             try
             {
                 if (_lastReceivedMessageTime.HasValue)
                 {
-                    if (DateTime.UtcNow - _lastReceivedMessageTime.Value > maxInactiveSpeakerTime)
+                    if (DateTime.UtcNow - _lastReceivedMessageTime.Value > _presentationSettings.MaxInactiveSpeakerTime)
                     {
                         // => speaker is inactive => stop viewing presentation slides
                         await MainThread.InvokeOnMainThreadAsync(() =>
@@ -178,12 +152,15 @@ public partial class PresentationViewModel : ObservableObject
                     }
                 }
 
-                // TODO: move to config
-                await Task.Delay(TimeSpan.FromSeconds(2));
+                await Task.Delay(_presentationSettings.CheckSpeakerActivityJobDelay);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                // TODO:
+                logger.LogError(
+                    ex,
+                    "An error occured in the job {JobName}: {ErrorMessage}",
+                    nameof(CheckSpeakerActivityJob),
+                    ex.Message);
             }
         }
     }
@@ -221,7 +198,7 @@ public partial class PresentationViewModel : ObservableObject
             // start listen for slides
             var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
 
-            _slideListener.StartListenSlides(
+            slideListener.StartListenSlides(
                 isExtended: true,
                 appId: _appSettings.AppAdvertiserId,
                 speakerIdentifier: speakerIdentifier,
@@ -231,7 +208,7 @@ public partial class PresentationViewModel : ObservableObject
             _checkSpeakerActivityCts = new CancellationTokenSource();
             _checkSpeakerActivityTask = Task.Run(CheckSpeakerActivityJob, _checkSpeakerActivityCts.Token);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
             // TODO:
         }
@@ -248,8 +225,12 @@ public partial class PresentationViewModel : ObservableObject
     {
         try
         {
-            _slideListener.StopListen();
-            _checkSpeakerActivityCts?.Cancel();
+            slideListener.StopListen();
+
+            if (_checkSpeakerActivityCts is not null)
+            {
+                await _checkSpeakerActivityCts.CancelAsync();
+            }
 
             if (_checkSpeakerActivityTask is not null)
             {
@@ -261,11 +242,11 @@ public partial class PresentationViewModel : ObservableObject
 
             _speakerSlides.Clear();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
             // TODO: change log message
-            _logger.LogError(
-                e,
+            logger.LogError(
+                ex,
                 "Error occurred while trying to finish listening to speaker with id {SpeakerId}",
                 SpeakerId);
         }

@@ -19,7 +19,7 @@ public partial class SpeakerViewModel : ObservableObject
     private const int BroadcastPeriodBetweenCircles = 500;
 
     private readonly ILogger<SpeakerViewModel> _logger;
-    private readonly IProximitySender _proximitySender;
+    private readonly IProximitySpeaker _proximitySpeaker;
     private readonly AppSettings _appSettings;
 
     // current page number -> slide
@@ -35,10 +35,10 @@ public partial class SpeakerViewModel : ObservableObject
     public SpeakerViewModel(
         ILogger<SpeakerViewModel> logger,
         IConfiguration configuration,
-        IProximitySender proximitySender)
+        IProximitySpeaker proximitySpeaker)
     {
         _logger = logger;
-        _proximitySender = proximitySender;
+        _proximitySpeaker = proximitySpeaker;
 
         _slides = new ConcurrentDictionary<int, SpeakerSlide>();
 
@@ -193,7 +193,7 @@ public partial class SpeakerViewModel : ObservableObject
             dataBytes[i + 2] = encodedUrlBytes[i];
         }
 
-        await _proximitySender.SendMessage(
+        await _proximitySpeaker.SendMessage(
             _appSettings.AppAdvertiserId,
             speakerId,
             dataBytes,
@@ -287,7 +287,7 @@ public partial class SpeakerViewModel : ObservableObject
 
     private void StartBroadcasting()
     {
-        _speakerId = _proximitySender.GenerateSenderIdentifier();
+        _speakerId = _proximitySpeaker.GenerateSenderIdentifier();
 
         _broadcastingSlidesCts = new CancellationTokenSource();
         _broadcastingSlidesTask = Task.Run(BroadcastSlidesJob, _broadcastingSlidesCts.Token);

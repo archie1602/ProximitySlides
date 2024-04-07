@@ -1,10 +1,7 @@
-namespace ProximitySlides.App.Managers;
+﻿namespace ProximitySlides.App.Managers;
 
-public class SlideMessage
-{
-    public string Url { get; set; } = null!;
-
-    public byte CurrentSlide { get; set; }
-
-    public byte TotalSlides { get; set; }
-}
+public record SlideMessage(
+    Uri Url,
+    int TotalSlides,
+    int CurrentSlide,
+    TimeSpan TimeToDeliver);

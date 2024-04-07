@@ -17,7 +17,7 @@ public static class FileHelper
 
         var fullPath = Path.Combine(destinationDirectory, filename);
 
-        using (var outputFileStream = new FileStream(fullPath, FileMode.Create))
+        await using (var outputFileStream = new FileStream(fullPath, FileMode.Create))
         {
             await fileStream.CopyToAsync(outputFileStream, cancellationToken);
         }
@@ -29,10 +29,10 @@ public static class FileHelper
     {
         using var cryptoProvider = SHA256.Create();
         using var fileStream = File.OpenRead(filePath);
-        
+
         var hash = cryptoProvider.ComputeHash(fileStream);
         var hashString = Convert.ToBase64String(hash);
-        
+
         return hashString.TrimEnd('=');
     }
 }

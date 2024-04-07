@@ -1,46 +1,71 @@
-﻿using System.Collections.Concurrent;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text;
+
 using ConcurrentCollections;
 
-using Java.Net;
-
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+
+using ProximitySlides.App.Applications;
 using ProximitySlides.App.Managers.Listeners;
 using ProximitySlides.App.Models;
-using ProximitySlides.Core.Extensions;
 
 namespace ProximitySlides.App.Managers;
 
-public class SlideListener : ISlideListener
+public class SlideListener(
+    ILogger<SlideListener> logger,
+    IConfiguration configuration,
+    IProximityListener proximityListener) : ISlideListener
 {
-    private readonly ILogger<SlideListener> _logger;
-    private readonly IProximityListener _proximityListener;
-    private readonly ICollection<BlePackageMessage> _speakerSlides;
-    private readonly ConcurrentQueue<BlePackageMessage> _handlersQueue;
+    private readonly ConcurrentHashSet<BlePackageMessage> _speakerPackages = new(comparer: new BlePackageEqualityComparer());
 
-    private Func<SlideDto, Task>? _onListenResultHandler;
+    private Func<SlideMessage, Task>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
 
-    private Task? _queueWorkerTask;
-    private CancellationTokenSource _queueWorkerCts;
+    private readonly AppSettings _appSettings = configuration.GetConfigurationSettings<AppSettings>();
 
-    public SlideListener(
-        ILogger<SlideListener> logger,
-        IProximityListener proximityListener)
+    private async void OnScanResult(BlePackageMessage package)
     {
-        _logger = logger;
-        _proximityListener = proximityListener;
-        // TODO: add equality comparator
-        _speakerSlides = new ConcurrentHashSet<BlePackageMessage>(new BlePackageEqualityComparer());
-        _handlersQueue = new ConcurrentQueue<BlePackageMessage>();
+        try
+        {
+            var existsPackage = _speakerPackages.FirstOrDefault(it => it.CurrentPackage == package.CurrentPackage);
 
-        _queueWorkerCts = new CancellationTokenSource();
-    }
+            if (existsPackage is not null)
+            {
+                TryUpdateExistingPackage(package, existsPackage);
+                return;
+            }
 
-    private void OnScanResult(BlePackageMessage package)
-    {
-        _handlersQueue.Enqueue(package);
+            _speakerPackages.Add(package);
+
+            if (_speakerPackages.Count != package.TotalPackages)
+            {
+                return;
+            }
+
+            var slideMsg = DecodeSlideMessage();
+
+            if (!Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
+            {
+                _speakerPackages.Clear();
+                return;
+            }
+
+            var t = InvokeHandler(slideMsg);
+
+            if (t is not null)
+            {
+                await t;
+            }
+
+            _speakerPackages.Clear();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "An error occurred while processing the speaker's advertising package: {ErrorMessage}",
+                ex.Message);
+        }
     }
 
     private void OnScanFailed(ListenFailed errorCode)
@@ -48,169 +73,53 @@ public class SlideListener : ISlideListener
         try
         {
             _onListenFailedHandler?.Invoke(errorCode);
-
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
             // TODO: add log
         }
     }
 
-    private async Task HandleMessage()
+    private Task? InvokeHandler(SlideDto slideMsg)
     {
-        while (!_queueWorkerCts.Token.IsCancellationRequested)
-        {
-            var guid = Guid.NewGuid();
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-            _logger.LogInformation("(Guid: {Id}): START. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
+        var ttd = _speakerPackages.Max(it => it.ReceivedAt) - _speakerPackages.Min(it => it.ReceivedAt);
 
-            if (!_handlersQueue.TryDequeue(out var package))
-            {
-                // TODO: move to config
-                // await Task.Delay(TimeSpan.FromMilliseconds(100));
-
-                _logger.LogInformation("(Guid: {Id}): COULDN'T dequeue element from queue", guid);
-
-                _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-                watch.Stop();
-
-                continue;
-            }
-
-            try
-            {
-                var tmpPackage = _speakerSlides
-                    .FirstOrDefault(it => it.CurrentPage == package.CurrentPage);
-
-                if (tmpPackage is not null)
-                {
-                    _logger.LogInformation("(Guid: {Id}): TryUpdateExistingPackage", guid);
-                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-                    watch.Stop();
-
-                    TryUpdateExistingPackage(package, tmpPackage);
-                    continue;
-                }
-
-                _speakerSlides.Add(package);
-
-                var isAllTotalPagesEqual = _speakerSlides
-                    .Select(it => it.TotalPages)
-                    .Distinct()
-                    .Count() == 1;
-
-                if (!isAllTotalPagesEqual)
-                {
-                    _logger.LogInformation("(Guid: {Id}): !isAllTotalPagesEqual", guid);
-                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-                    watch.Stop();
-
-                    // TODO: skip all and start again...
-                    _speakerSlides.Clear();
-                    _speakerSlides.Add(package);
-
-                    continue;
-                }
-
-                if (_speakerSlides.Count != package.TotalPages)
-                {
-                    _logger.LogInformation("(Guid: {Id}): _speakerSlides.Count != package.TotalPages", guid);
-                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-                    watch.Stop();
-
-                    continue;
-                }
-
-                var slideMsg = TryDecodeSlideMessage();
-
-
-                if (!Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute))
-                {
-                    _logger.LogInformation("(Guid: {Id}): slideMsg is null || !Uri.IsWellFormedUriString(slideMsg.Url, UriKind.Absolute)", guid);
-                    _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-                    watch.Stop();
-
-                    // TODO: add log
-                    continue;
-                }
-
-                await InvokeHandler(slideMsg);
-
-                _logger.LogInformation("(Guid: {Id}): HAPPY PATH InvokeHandler", guid);
-                _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-                watch.Stop();
-            }
-            catch (Exception e)
-            {
-                _logger.LogInformation("(Guid: {Id}): Exception", guid);
-                _logger.LogInformation("(Guid: {Id}): END. TOTAL ELEMENTS: {Total}", guid, _handlersQueue.Count);
-                watch.Stop();
-
-                // TODO: add log
-
-                // TODO: clear нужно делать в случае, если упали на десериализации
-                _speakerSlides.Clear();
-            }
-        }
+        return _onListenResultHandler?.Invoke(
+            new SlideMessage(
+                Url: new Uri(slideMsg.Url),
+                CurrentSlide: slideMsg.CurrentSlide,
+                TotalSlides: slideMsg.TotalSlides,
+                TimeToDeliver: ttd));
     }
 
-    private SlideMessage TryDecodeSlideMessage()
+    private SlideDto DecodeSlideMessage()
     {
-        var payloads = _speakerSlides
+        var payloads = _speakerPackages
             .Select(it => it.Payload)
             .ToList();
 
         var payloadBytes = ConcatArrays(payloads);
-
-        var totalSlides = payloadBytes[0];
-        var currentSlide = payloadBytes[1];
-
         var fileId = Encoding.ASCII.GetString(payloadBytes[2..]);
 
-        var slideMsg = new SlideMessage
-        {
-            Url = $"https://share.m4u.app/v1/files?id={fileId}",
-            CurrentSlide = currentSlide,
-            TotalSlides = totalSlides
-        };
+        var slideMsg = new SlideDto(
+            Url: $"{_appSettings.FileSharingUrlPrefix}{fileId}",
+            TotalSlides: payloadBytes[0],
+            CurrentSlide: payloadBytes[1]);
 
         return slideMsg;
     }
 
-    private void TryUpdateExistingPackage(BlePackageMessage package, BlePackageMessage tmpPackage)
+    private void TryUpdateExistingPackage(BlePackageMessage newPackage, BlePackageMessage oldPackage)
     {
-        if (tmpPackage.TotalPages == package.TotalPages &&
-            tmpPackage.Payload.SequenceEqual(package.Payload))
+        if (oldPackage.TotalPackages == newPackage.TotalPackages
+            && oldPackage.Payload.SequenceEqual(newPackage.Payload))
         {
-            // TODO: update timestamp and etc...
-            tmpPackage.ReceivedAt = package.ReceivedAt;
+            oldPackage.ReceivedAt = newPackage.ReceivedAt;
             return;
         }
 
-        // TODO: skip all and start again...
-        _speakerSlides.Clear();
-        _speakerSlides.Add(package);
-    }
-
-    private async Task InvokeHandler(SlideMessage slideMsg)
-    {
-        await MainThread.InvokeOnMainThreadAsync(async () =>
-        {
-            var t = _onListenResultHandler?.Invoke(new SlideDto
-            {
-                Url = new Uri(slideMsg.Url),
-                CurrentSlide = slideMsg.CurrentSlide,
-                TotalSlides = slideMsg.TotalSlides,
-                TimeToDeliver = _speakerSlides.Max(it => it.ReceivedAt) - _speakerSlides.Min(it => it.ReceivedAt)
-            });
-
-            if (t is not null)
-            {
-                await t;
-            }
-        });
-
-        _speakerSlides.Clear();
+        _speakerPackages.Clear();
+        _speakerPackages.Add(newPackage);
     }
 
     private static byte[] ConcatArrays(IReadOnlyCollection<byte[]> array)
@@ -237,19 +146,15 @@ public class SlideListener : ISlideListener
         bool isExtended,
         string appId,
         SpeakerIdentifier speakerIdentifier,
-        Func<SlideDto, Task>? listenResultCallback,
+        Func<SlideMessage, Task>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback)
     {
-        _speakerSlides.Clear();
-        _handlersQueue.Clear();
+        _speakerPackages.Clear();
 
         _onListenResultHandler = listenResultCallback;
         _onListenFailedHandler = listenFailedCallback;
 
-        _queueWorkerCts = new CancellationTokenSource();
-        _queueWorkerTask = Task.Run(HandleMessage, _queueWorkerCts.Token);
-
-        _proximityListener.StartListenConcreteSpeaker(
+        proximityListener.StartListenConcreteSpeaker(
             isExtended: isExtended,
             appId: appId,
             speakerIdentifier: speakerIdentifier,
@@ -259,12 +164,9 @@ public class SlideListener : ISlideListener
 
     public void StopListen()
     {
-        _proximityListener.StopListen();
+        proximityListener.StopListen();
 
-        _queueWorkerCts.Cancel();
-
-        _speakerSlides.Clear();
-        _handlersQueue.Clear();
+        _speakerPackages.Clear();
 
         _onListenResultHandler = null;
         _onListenFailedHandler = null;

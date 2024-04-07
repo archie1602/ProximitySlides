@@ -36,38 +36,12 @@ public static class MauiProgram
         builder.Services.AddApp(builder.Configuration);
         builder.Services.AddCore();
 
-        builder.Services.AddSingleton<IProximitySender, BleSpeaker>();
+        builder.Services.AddSingleton<IProximitySpeaker, BleSpeaker>();
         builder.Services.AddSingleton<IProximityListener, BleListener>();
 
-        builder.Services.AddSingleton<IFilePicker>(FilePicker.Default);
+        builder.Services.AddSingleton(FilePicker.Default);
 
         var app = builder.Build();
-
-        // Task.Run(async () =>
-        // {
-        //     var rootDir = "presentations";
-        //     var pathToSlidesDir = Path.Combine(FileSystem.Current.AppDataDirectory, rootDir, "2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9", "slides");
-        //     var pdfPath = Path.Combine(FileSystem.Current.AppDataDirectory, rootDir, "2a225d0a-ad87-4f95-9eec-d9f5c98ca6d9", "Introduction_to_Hadoop.pdf");
-        //
-        //     using (var pdfStream = File.OpenRead(pdfPath))
-        //     {
-        //         var result = PDFtoImage.Conversion.ToImagesAsync(pdfStream);
-        //
-        //         var i = 1;
-        //     
-        //         await foreach (var pdfImage in result)
-        //         {
-        //             using (var imageStream =
-        //                    File.Create(
-        //                        Path.Combine(pathToSlidesDir, $"slide_{i++}.png")))
-        //             {
-        //                 pdfImage.Encode(imageStream, SKEncodedImageFormat.Png, 100);
-        //             }
-        //         }
-        //     }
-        // })
-        // .GetAwaiter()
-        // .GetResult();
 
         return app;
     }
