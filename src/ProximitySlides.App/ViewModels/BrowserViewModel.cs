@@ -14,7 +14,7 @@ public partial class BrowserViewModel : ObservableObject
     private readonly ILogger<BrowserViewModel> _logger;
     private readonly IFilePicker _filePicker;
 
-    private string _basePath = Path.Combine(FileSystem.Current.AppDataDirectory, "presentations");
+    private readonly string _basePath = Path.Combine(FileSystem.Current.AppDataDirectory, "presentations");
 
     private FileResult? _selectedFileResult;
 
@@ -43,6 +43,11 @@ public partial class BrowserViewModel : ObservableObject
     private void RefreshStoredCollection()
     {
         StoredPresentations.Clear();
+
+        if (!Directory.Exists(_basePath))
+        {
+            Directory.CreateDirectory(_basePath);
+        }
 
         var presentationDirsPaths = Directory.GetDirectories(_basePath);
         var presentations = new List<StoredPresentation>(presentationDirsPaths.Length);
@@ -77,6 +82,7 @@ public partial class BrowserViewModel : ObservableObject
     [RelayCommand]
     private async Task OnAppearing()
     {
+
     }
 
     [RelayCommand]
