@@ -5,4 +5,4 @@ public record ListenerSlide(
     int TotalSlides,
     int CurrentSlide,
     SlideStorage Storage,
-    TimeSpan TimeToDeliver);
+    TimeSpan TotalTransmissionTime);

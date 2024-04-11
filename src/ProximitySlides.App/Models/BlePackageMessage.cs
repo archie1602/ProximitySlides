@@ -7,6 +7,7 @@ public class BlePackageMessage
     public required int TotalPackages { get; set; }
     public required byte[] Payload { get; set; }
     public required int Rssi { get; set; }
+    public required TimeSpan TransmissionTime { get; set; }
     public required DateTime ReceivedAt { get; set; }
 }
 

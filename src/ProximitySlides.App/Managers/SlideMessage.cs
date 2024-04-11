@@ -4,6 +4,6 @@ public record SlideMessage(
     Uri Url,
     int TotalSlides,
     int CurrentSlide,
-    TimeSpan TimeToDeliver,
+    TimeSpan TotalTransmissionTime,
     int FileIdLength,
     List<int> PackagesRssi);

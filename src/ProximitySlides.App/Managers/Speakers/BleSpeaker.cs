@@ -79,6 +79,15 @@ public class BleSpeaker : IProximitySpeaker
         return new SpeakerIdentifier(senderId);
     }
 
+    private static byte[] GetCurrentTimestamp()
+    {
+        var dto = new DateTimeOffset(DateTime.UtcNow);
+        var nowUnixEpoch = dto.ToUnixTimeMilliseconds();
+
+        // return 8 bytes
+        return BitConverter.GetBytes(nowUnixEpoch);
+    }
+
     public async Task SendMessage(
         string appId,
         SpeakerIdentifier speakerIdentifier,
@@ -124,9 +133,9 @@ public class BleSpeaker : IProximitySpeaker
             // copy total # of pages - 1 byte
             packageToSend[senderLength + 1] = (byte)totalPackages;
 
-            // copy other payload - 23 bytes
+            // copy other payload - 23 bytes - 8 bytes = 15 bytes
 
-            var k = senderLength + 2;
+            var k = senderLength + 2 + 8;
 
             for (var j = startIndex; j < endIndex; j++)
             {
@@ -139,6 +148,16 @@ public class BleSpeaker : IProximitySpeaker
                     IncludeDeviceName: false,
                     IncludeTxPowerLevel: false,
                     ServicesData: new List<ServiceData> { new(appUuid, packageToSend) }));
+
+            // copy 'send timestamp'
+            var nowTimestamp = GetCurrentTimestamp();
+
+            var l = senderLength + 2;
+
+            for (var j = 0; j < nowTimestamp.Length; j++)
+            {
+                packageToSend[l++] = data[j];
+            }
 
             _bleAdvertiser.StartAdvertising(
                 options: advOptions,

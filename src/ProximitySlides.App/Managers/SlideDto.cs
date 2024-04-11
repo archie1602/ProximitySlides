@@ -5,4 +5,5 @@ public record SlideDto(
     byte TotalSlides,
     byte CurrentSlide,
     int FileIdLength,
+    TimeSpan TotalTransmissionTime,
     List<int> PackagesRssi);

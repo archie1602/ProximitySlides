@@ -89,14 +89,12 @@ public class SlideListener(
 
     private Task? InvokeHandler(SlideDto slideMsg)
     {
-        var ttd = _speakerPackages.Max(it => it.ReceivedAt) - _speakerPackages.Min(it => it.ReceivedAt);
-
         return _onListenResultHandler?.Invoke(
             new SlideMessage(
                 Url: new Uri(slideMsg.Url),
                 CurrentSlide: slideMsg.CurrentSlide,
                 TotalSlides: slideMsg.TotalSlides,
-                TimeToDeliver: ttd,
+                TotalTransmissionTime: slideMsg.TotalTransmissionTime,
                 FileIdLength: slideMsg.FileIdLength,
                 PackagesRssi: slideMsg.PackagesRssi));
     }
@@ -116,6 +114,8 @@ public class SlideListener(
             TotalSlides: payloadBytes[0],
             CurrentSlide: payloadBytes[1],
             FileIdLength: payloadBytes.Length - 2,
+            TotalTransmissionTime: _speakerPackages
+                .Sum(it => it.TransmissionTime),
             PackagesRssi: _speakerPackages
                 .OrderBy(it => it.CurrentPackage)
                 .Select(it => it.Rssi)

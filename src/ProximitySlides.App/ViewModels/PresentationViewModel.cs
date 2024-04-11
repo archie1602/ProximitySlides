@@ -57,19 +57,16 @@ public partial class PresentationViewModel(
     {
         try
         {
-            var diff = DateTime.UtcNow - _lastReceivedMessageTime;
+            _lastReceivedMessageTime = DateTime.UtcNow;
 
-            if (diff.HasValue)
-            {
-                SyncTime = $"{diff.Value.Seconds}:{diff.Value.Milliseconds}|{slideMsg.PackagesRssi.Min()};{slideMsg.PackagesRssi.Max()}|{slideMsg.FileIdLength}";
-                logger.LogInformation("Sync time: {SyncTime}", SyncTime);
-            }
+            var ttt = slideMsg.TotalTransmissionTime;
+
+            SyncTime = $"{ttt.Seconds}:{ttt.Milliseconds}:{ttt.Microseconds}|{slideMsg.PackagesRssi.Min()};{slideMsg.PackagesRssi.Max()}|{slideMsg.FileIdLength}";
 
             if (_speakerSlides.TryGetValue(slideMsg.CurrentSlide, out var existingSlide))
             {
                 if (CurrentSlide.CurrentSlide == existingSlide.CurrentSlide)
                 {
-                    _lastReceivedMessageTime = DateTime.UtcNow;
                     return;
                 }
 
@@ -77,7 +74,6 @@ public partial class PresentationViewModel(
                 CurrentSlidePage = existingSlide.CurrentSlide;
                 OnSlideReceivedHandler?.Invoke(existingSlide);
 
-                _lastReceivedMessageTime = DateTime.UtcNow;
                 return;
             }
 
@@ -98,19 +94,16 @@ public partial class PresentationViewModel(
                     AbsoluteStoragePath = pathToSlideFile,
                     RelativeStoragePath = Path.Combine(BaseSpeakersDirectoryName, _speakerDirectoryName, fileName)
                 },
-                TimeToDeliver: slideMsg.TimeToDeliver);
+                TotalTransmissionTime: slideMsg.TotalTransmissionTime);
 
             if (!_speakerSlides.TryAdd(slideMsg.CurrentSlide, newSlide))
             {
-                _lastReceivedMessageTime = DateTime.UtcNow;
                 throw new InvalidOperationException("Couldn't add a new slide to the dictionary");
             }
 
             CurrentSlide = newSlide;
             CurrentSlidePage = newSlide.CurrentSlide;
             OnSlideReceivedHandler?.Invoke(newSlide);
-
-            _lastReceivedMessageTime = DateTime.UtcNow;
         }
         catch (Exception ex)
         {
@@ -118,7 +111,6 @@ public partial class PresentationViewModel(
                 ex,
                 "An error occurred while trying to read the slide: {ErrorMessage}",
                 ex.Message);
-            _lastReceivedMessageTime = DateTime.UtcNow;
         }
     }
 
