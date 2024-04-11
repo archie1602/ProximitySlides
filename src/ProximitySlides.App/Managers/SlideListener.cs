@@ -96,12 +96,15 @@ public class SlideListener(
                 Url: new Uri(slideMsg.Url),
                 CurrentSlide: slideMsg.CurrentSlide,
                 TotalSlides: slideMsg.TotalSlides,
-                TimeToDeliver: ttd));
+                TimeToDeliver: ttd,
+                FileIdLength: slideMsg.FileIdLength,
+                PackagesRssi: slideMsg.PackagesRssi));
     }
 
     private SlideDto DecodeSlideMessage()
     {
         var payloads = _speakerPackages
+            .OrderBy(it => it.CurrentPackage)
             .Select(it => it.Payload)
             .ToList();
 
@@ -111,7 +114,12 @@ public class SlideListener(
         var slideMsg = new SlideDto(
             Url: $"{_appSettings.FileSharingUrlPrefix}{fileId}",
             TotalSlides: payloadBytes[0],
-            CurrentSlide: payloadBytes[1]);
+            CurrentSlide: payloadBytes[1],
+            FileIdLength: payloadBytes.Length - 2,
+            PackagesRssi: _speakerPackages
+                .OrderBy(it => it.CurrentPackage)
+                .Select(it => it.Rssi)
+                .ToList());
 
         return slideMsg;
     }

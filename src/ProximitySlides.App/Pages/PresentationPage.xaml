@@ -6,13 +6,13 @@
              x:Class="ProximitySlides.App.Pages.PresentationPage"
              xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
              x:DataType="viewModels:PresentationViewModel">
-    
+
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             EventName="Appearing"
             Command="{Binding AppearingCommand}"/>
     </ContentPage.Behaviors>
-    
+
     <Shell.BackButtonBehavior>
         <BackButtonBehavior Command="{Binding BackButtonClickedCommand}"></BackButtonBehavior>
     </Shell.BackButtonBehavior>
@@ -22,11 +22,16 @@
 
         <Label Text="{Binding SpeakerId}"
                FontSize="22"
-               HorizontalOptions="Center"
+               HorizontalOptions="Start"
                VerticalOptions="Center"/>
-        
+
+        <Label Text="{Binding SyncTime}"
+               FontSize="22"
+               HorizontalOptions="End"
+               VerticalOptions="Center"/>
+
         <Image Grid.Row="1"
                Source="{Binding ActiveSlide}" />
     </Grid>
-    
+
 </ContentPage>

@@ -27,8 +27,13 @@ public class BleListener(ILogger<BleListener> logger, IBleScanner bleScanner) : 
     {
         try
         {
+            if (result is null)
+            {
+                return;
+            }
+
             var dataUuid = ParcelUuid.FromString(_listenId);
-            var bytes = result?.ScanRecord?.GetServiceData(dataUuid);
+            var bytes = result.ScanRecord?.GetServiceData(dataUuid);
 
             if (bytes is null)
             {
@@ -48,6 +53,7 @@ public class BleListener(ILogger<BleListener> logger, IBleScanner bleScanner) : 
                 CurrentPackage = bytes[SpeakerIdLength],
                 TotalPackages = bytes[SpeakerIdLength + 1],
                 Payload = bytes[(SpeakerIdLength + 2)..bytes.Length],
+                Rssi = result.Rssi,
                 ReceivedAt = DateTime.UtcNow
             };
 
