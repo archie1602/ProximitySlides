@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Applications;
+using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Speakers;
 using ProximitySlides.App.Models;
@@ -170,7 +171,7 @@ public partial class SpeakerViewModel : ObservableObject
                 await SendSlide(currentSlide, _speakerId);
 
                 // TODO: move to config
-                await Task.Delay(TimeSpan.FromMilliseconds(BroadcastPeriodBetweenCircles), _broadcastingSlidesCts.Token);
+                await Task.Delay(TimeSpan.FromMilliseconds(AppParameters.BroadcastDelayBetweenCirclesMs), _broadcastingSlidesCts.Token);
             }
         }
         catch (Exception e)
@@ -193,11 +194,22 @@ public partial class SpeakerViewModel : ObservableObject
             dataBytes[i + 2] = encodedUrlBytes[i];
         }
 
-        await _proximitySpeaker.SendMessage(
-            _appSettings.AppAdvertiserId,
-            speakerId,
-            dataBytes,
-            CancellationToken.None);
+        if (AppParameters.IsExtendedAdvertising)
+        {
+            await _proximitySpeaker.SendExtendedMessage(
+                _appSettings.AppAdvertiserId,
+                speakerId,
+                dataBytes,
+                CancellationToken.None);
+        }
+        else
+        {
+            await _proximitySpeaker.SendMessage(
+                _appSettings.AppAdvertiserId,
+                speakerId,
+                dataBytes,
+                CancellationToken.None);
+        }
     }
 
     [RelayCommand]

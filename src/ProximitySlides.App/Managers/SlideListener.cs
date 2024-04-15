@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 using ConcurrentCollections;
 
@@ -6,7 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using ProximitySlides.App.Applications;
+using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers.Listeners;
+using ProximitySlides.App.Metrics;
 using ProximitySlides.App.Models;
 
 namespace ProximitySlides.App.Managers;
@@ -57,6 +59,25 @@ public class SlideListener(
                 return;
             }
 
+            var now = DateTime.Now;
+
+            // BleMetricsHandler.SaveMetrics(
+            //     new BleMetric
+            //     {
+            //         DeviceName = DeviceInfo.Current.Name,
+            //         PayloadLength = slideMsg.PayloadLength,
+            //         SpeakerId = _speakerPackages.First().SpeakerId,
+            //         TransferTime = slideMsg.TotalTransmissionTime.TotalMilliseconds,
+            //         IsExtendedAdvertising = AppParameters.IsExtendedAdvertising,
+            //         DelayBetweenCirclesMs = AppParameters.BroadcastPeriodBetweenCirclesMs,
+            //         DelayBetweenPackagesMs = AppParameters.BroadcastDelayBetweenPackagesMs,
+            //         MinRssi = slideMsg.PackagesRssi.Min(),
+            //         MaxRssi = slideMsg.PackagesRssi.Max(),
+            //         AverageRssi = slideMsg.PackagesRssi.Average(),
+            //         CreatedAt = now,
+            //         Ticks = now.Ticks
+            //     });
+
             var t = InvokeHandler(slideMsg);
 
             if (t is not null)
@@ -87,16 +108,16 @@ public class SlideListener(
         }
     }
 
-    private Task? InvokeHandler(SlideDto slideMsg)
+    private Task? InvokeHandler(SlideDto slideDto)
     {
         return _onListenResultHandler?.Invoke(
             new SlideMessage(
-                Url: new Uri(slideMsg.Url),
-                CurrentSlide: slideMsg.CurrentSlide,
-                TotalSlides: slideMsg.TotalSlides,
-                TotalTransmissionTime: slideMsg.TotalTransmissionTime,
-                FileIdLength: slideMsg.FileIdLength,
-                PackagesRssi: slideMsg.PackagesRssi));
+                Url: new Uri(slideDto.Url),
+                CurrentSlide: slideDto.CurrentSlide,
+                TotalSlides: slideDto.TotalSlides,
+                TotalTransmissionTime: slideDto.TotalTransmissionTime,
+                FileIdLength: slideDto.PayloadLength,
+                PackagesRssi: slideDto.PackagesRssi));
     }
 
     private SlideDto DecodeSlideMessage()
@@ -113,9 +134,8 @@ public class SlideListener(
             Url: $"{_appSettings.FileSharingUrlPrefix}{fileId}",
             TotalSlides: payloadBytes[0],
             CurrentSlide: payloadBytes[1],
-            FileIdLength: payloadBytes.Length - 2,
-            TotalTransmissionTime: _speakerPackages
-                .Sum(it => it.TransmissionTime),
+            PayloadLength: payloadBytes.Length,
+            TotalTransmissionTime: DateTime.UtcNow - _speakerPackages.Select(it => it.SentAt).Min(),
             PackagesRssi: _speakerPackages
                 .OrderBy(it => it.CurrentPackage)
                 .Select(it => it.Rssi)

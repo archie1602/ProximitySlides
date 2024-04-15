@@ -63,6 +63,8 @@ public partial class PresentationViewModel(
 
             SyncTime = $"{ttt.Seconds}:{ttt.Milliseconds}:{ttt.Microseconds}|{slideMsg.PackagesRssi.Min()};{slideMsg.PackagesRssi.Max()}|{slideMsg.FileIdLength}";
 
+            return;
+
             if (_speakerSlides.TryGetValue(slideMsg.CurrentSlide, out var existingSlide))
             {
                 if (CurrentSlide.CurrentSlide == existingSlide.CurrentSlide)
@@ -206,11 +208,13 @@ public partial class PresentationViewModel(
             var speakerIdentifier = new SpeakerIdentifier(SpeakerId);
 
             slideListener.StartListenSlides(
-                isExtended: false,
+                isExtended: AppParameters.IsExtendedAdvertising,
                 appId: _appSettings.AppAdvertiserId,
                 speakerIdentifier: speakerIdentifier,
                 listenResultCallback: OnReceivedSlide,
                 listenFailedCallback: OnListenFailed);
+
+            return;
 
             _checkSpeakerActivityCts = new CancellationTokenSource();
             _checkSpeakerActivityTask = Task.Run(CheckSpeakerActivityJob, _checkSpeakerActivityCts.Token);

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -75,15 +75,31 @@
         </Border.StrokeShape>-->
 
     <Grid RowDefinitions="100, Auto, *, Auto"
-          ColumnDefinitions=".50*, .50*"
-          BackgroundColor="#ffec99">
+          ColumnDefinitions=".50*, .50*">
 
-        <Button Grid.Row="0"
+        <Entry Text="{Binding BroadcastDelayBetweenPackagesMs}"
+               Placeholder="Enter packages delay"
+               FontSize="16"/>
+
+        <Entry
+               Grid.Column="1"
+               Text="{Binding BroadcastPeriodBetweenCirclesMs}"
+               Placeholder="Enter circles delay"
+               FontSize="16"/>
+
+        <Entry
+               Grid.Row="1"
+               Grid.ColumnSpan="2"
+               Text="{Binding IsExtendedAdvertising}"
+               Placeholder="Is Extended"
+               FontSize="16"/>
+
+        <Button Grid.Row="2"
                 Grid.ColumnSpan="2"
                 HeightRequest="50"
-                Text="Start"
+                Text="Save settings"
                 Margin="10,0,10,10"
-                Command="{Binding StartButtonClickedCommand}" />
+                Command="{Binding SaveSettingsButtonClickedCommand}" />
 
     </Grid>
     <!--</Border>-->

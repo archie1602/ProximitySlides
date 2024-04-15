@@ -4,6 +4,6 @@ public record SlideDto(
     string Url,
     byte TotalSlides,
     byte CurrentSlide,
-    int FileIdLength,
+    int PayloadLength,
     TimeSpan TotalTransmissionTime,
     List<int> PackagesRssi);

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using ProximitySlides.App.Applications;
+using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Listeners;
 using ProximitySlides.App.Models;
@@ -134,7 +135,7 @@ public partial class ListenerViewModel : ObservableObject
             Speakers.Clear();
 
             _proximityListener.StartListenAllSpeakers(
-                false,
+                AppParameters.IsExtendedAdvertising,
                 _appSettings.AppAdvertiserId,
                 OnReceivedPackage,
                 OnListenFailed);

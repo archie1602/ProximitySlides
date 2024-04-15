@@ -17,4 +17,16 @@ public partial class MainViewModel : ObservableObject
     {
         await Shell.Current.GoToAsync(nameof(ListenerPage));
     }
+
+    [RelayCommand]
+    private async Task NavigateToBenchmarkSpeaker()
+    {
+        await Shell.Current.GoToAsync(nameof(BenchmarkSpeakerPage));
+    }
+
+    [RelayCommand]
+    private async Task NavigateToBenchmarkListener()
+    {
+        await Shell.Current.GoToAsync(nameof(BenchmarkListenerPage));
+    }
 }

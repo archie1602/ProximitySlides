@@ -1,5 +1,7 @@
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
+
+using ProximitySlides.App.Benchmark;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Pages;
 using ProximitySlides.App.ViewModels;
@@ -25,7 +27,11 @@ public static class Bootstraps
         services.AddSingleton<BrowserViewModel>();
         services.AddSingleton<TestViewModel>();
 
+        services.AddSingleton<BenchmarkSpeakerViewModel>();
+        services.AddSingleton<BenchmarkListenerViewModel>();
+
         services.AddSingleton<ISlideListener, SlideListener>();
+        services.AddSingleton<IBenchmarkListener, BenchmarkListener>();
 
         return services;
     }
@@ -41,6 +47,9 @@ public static class Bootstraps
         services.AddTransient<PresentationPage>();
         services.AddTransient<BrowserPage>();
         services.AddTransient<TestPage>();
+
+        services.AddTransient<BenchmarkSpeakerPage>();
+        services.AddTransient<BenchmarkListenerPage>();
 
         return services;
     }

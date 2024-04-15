@@ -23,15 +23,8 @@ public class BleListener(ILogger<BleListener> logger, IBleScanner bleScanner) : 
     private Action<BlePackageMessage>? _onListenResultHandler;
     private Action<ListenFailed>? _onListenFailedHandler;
 
-    private DateTime ConvertFromUnixEpoch(long unixEpochTs)
-    {
-
-    }
-
     private void OnScanResult(BleScanCallbackType callbackType, ScanResult? result)
     {
-        var now = DateTime.UtcNow;
-
         try
         {
             if (result is null)
@@ -56,7 +49,7 @@ public class BleListener(ILogger<BleListener> logger, IBleScanner bleScanner) : 
 
             var sendAtBytes = bytes[(SpeakerIdLength + 2)..(SpeakerIdLength + 2 + 8)];
             var sendAtUnixEpoch = BitConverter.ToInt64(sendAtBytes);
-            var sendAt = DateTime.UnixEpoch.AddMilliseconds(sendAtUnixEpoch);
+            var sentAt = DateTime.UnixEpoch.AddMilliseconds(sendAtUnixEpoch);
 
             var package = new BlePackageMessage
             {
@@ -65,7 +58,7 @@ public class BleListener(ILogger<BleListener> logger, IBleScanner bleScanner) : 
                 TotalPackages = bytes[SpeakerIdLength + 1],
                 Payload = bytes[(SpeakerIdLength + 2 + 8)..bytes.Length],
                 Rssi = result.Rssi,
-                TransmissionTime = now - sendAt,
+                SentAt = sentAt,
                 ReceivedAt = DateTime.UtcNow
             };
 

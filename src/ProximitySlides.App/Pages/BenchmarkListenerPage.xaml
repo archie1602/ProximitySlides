@@ -1,0 +1,103 @@
+<?xml
+    version="1.0"
+    encoding="utf-8"?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="ProximitySlides.App.Pages.BenchmarkListenerPage"
+    xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
+    x:DataType="viewModels:BenchmarkListenerViewModel"
+    Title="Benchmark.Listener">
+
+    <Grid
+        RowDefinitions="50, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, *"
+        ColumnDefinitions=".25*, .50*, .25*">
+
+        <Label
+            Grid.Row="0"
+            Grid.ColumnSpan="3"
+            Padding="0, 0, 0, 0"
+            FontSize="20"
+            HorizontalTextAlignment="Start"
+            VerticalTextAlignment="Center"
+            Text="{Binding SyncTime}" />
+
+        <Button
+            Grid.Row="1"
+            Grid.ColumnSpan="3"
+            Margin="5, 5, 5, 5"
+            Text="Start scanning"
+            Command="{Binding StartScanningButtonClickedCommand}" />
+
+        <Button
+            Grid.Row="2"
+            Grid.ColumnSpan="3"
+            Margin="5, 5, 5, 5"
+            Text="Share metrics"
+            Command="{Binding ShareMetricsFileButtonClickedCommand}" />
+
+        <Entry
+            Text="{Binding BroadcastDelayBetweenCirclesMs}"
+            Grid.Row="3"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter circles delay"
+            FontFamily="Helvetica"
+            FontSize="22"
+            MaxLength="20" />
+
+        <Entry
+            Text="{Binding BroadcastDelayBetweenPackagesMs}"
+            Grid.Row="4"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter packages delay"
+            FontFamily="Helvetica"
+            FontSize="22"
+            MaxLength="20" />
+
+        <Entry
+            Text="{Binding BleVersion}"
+            Grid.Row="5"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter ble version"
+            FontFamily="Helvetica"
+            FontSize="22"
+            MaxLength="20" />
+
+        <Entry
+            Text="{Binding AdvertisingMode}"
+            Grid.Row="6"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter advertising mode"
+            FontFamily="Helvetica"
+            FontSize="22"
+            MaxLength="20" />
+
+        <Entry
+            Text="{Binding AdvertisingTx}"
+            Grid.Row="7"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter advertising tx"
+            FontFamily="Helvetica"
+            FontSize="22"
+            MaxLength="20" />
+
+        <Entry
+            Text="{Binding ScanMode}"
+            Grid.Row="8"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter scan mode"
+            FontFamily="Helvetica"
+            FontSize="22"
+            MaxLength="20" />
+
+        <Button
+            Grid.Row="9"
+            Grid.ColumnSpan="3"
+            Margin="5, 5, 5, 5"
+            Text="Save settings"
+            Command="{Binding SaveSettingsButtonClickedCommand}" />
+
+    </Grid>
+
+</ContentPage>

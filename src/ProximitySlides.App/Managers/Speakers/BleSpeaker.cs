@@ -1,4 +1,6 @@
 using System.Text;
+
+using ProximitySlides.App.Helpers;
 using ProximitySlides.Core;
 using ProximitySlides.Core.Managers.Advertisers.Classic;
 using ProximitySlides.Core.Managers.Advertisers.Common;
@@ -9,7 +11,7 @@ namespace ProximitySlides.App.Managers.Speakers;
 public class BleSpeaker : IProximitySpeaker
 {
     private static readonly TimeSpan BroadcastDelayBetweenPackages = TimeSpan.FromMilliseconds(100);
-    private const int BlePacketPayloadLength = 23;
+    private const int BlePacketPayloadLength = 25 - 8;
     private const int BlePacketSenderIdLength = 2;
     private const string BaseUuid = "0000{0}-0000-1000-8000-00805F9B34FB";
 
@@ -88,6 +90,78 @@ public class BleSpeaker : IProximitySpeaker
         return BitConverter.GetBytes(nowUnixEpoch);
     }
 
+    public async Task SendMessage(string appId, byte[] data, CancellationToken cancellationToken)
+    {
+        var appUuid = GetSenderUuid(appId);
+
+        var advSettings = new AdvertisementSettings(
+            Mode: AppParameters.BleAdvertiseMode,
+            TxPowerLevel: AppParameters.BleAdvertiseTx,
+            IsConnectable: false);
+
+        // 31 - (2 (uuid) + 2 (uuid length and type) + 1 (total pages) + 1 (current page) + 8 (start timestamp)) = 31 - 6 - 8 = 17 bytes (payload)
+
+        var totalPackages = (int)Math.Ceiling((double)data.Length / BlePacketPayloadLength);
+
+        for (var i = 0; i < totalPackages; i++)
+        {
+            var startIndex = i * BlePacketPayloadLength;
+            int endIndex;
+
+            if (i == totalPackages - 1)
+            {
+                endIndex = data.Length;
+            }
+            else
+            {
+                endIndex = startIndex + BlePacketPayloadLength;
+            }
+
+            var packageToSend = new byte[2 + 8 + endIndex - startIndex];
+
+            // copy package # - 1 byte
+            packageToSend[0] = (byte)i;
+
+            // copy total # of packages - 1 byte
+            packageToSend[1] = (byte)totalPackages;
+
+            // copy other payload - 25 bytes - 8 bytes = 17 bytes
+
+            var k = 2 + 8;
+
+            for (var j = startIndex; j < endIndex; j++)
+            {
+                packageToSend[k++] = data[j];
+            }
+
+            var advOptions = new AdvertisementOptions(
+                Settings: advSettings,
+                Data: new AdvertisementCommonData(
+                    IncludeDeviceName: false,
+                    IncludeTxPowerLevel: false,
+                    ServicesData: new List<ServiceData> { new(appUuid, packageToSend) }));
+
+            // copy 'send timestamp'
+            var nowTimestampBytes = GetCurrentTimestamp();
+
+            var l = 2;
+
+            foreach (var tb in nowTimestampBytes)
+            {
+                packageToSend[l++] = tb;
+            }
+
+            _bleAdvertiser.StartAdvertising(
+                options: advOptions,
+                startSuccessCallback: OnStartSuccess,
+                startFailureCallback: OnStartFailure);
+
+            await Task.Delay(TimeSpan.FromMilliseconds(AppParameters.BroadcastDelayBetweenPackagesMs), cancellationToken);
+
+            _bleAdvertiser.StopAdvertising();
+        }
+    }
+
     public async Task SendMessage(
         string appId,
         SpeakerIdentifier speakerIdentifier,
@@ -102,7 +176,7 @@ public class BleSpeaker : IProximitySpeaker
             TxPowerLevel: BleAdvertiseTx.PowerHigh,
             IsConnectable: false);
 
-        // 31 - (2 + 2 (uuid) + 2 bytes (deviceId) + 1 (total pages) + 1 (current page)) = 31 - 8 = 23 bytes (payload)
+        // 31 - (2 + 2 (uuid) + 2 bytes (deviceId) + 1 (total pages) + 1 (current page) - 8 (timestamp)) = 31 - 8 - 8 = 15 bytes (payload)
 
         var totalPackages = (int)Math.Ceiling((double)data.Length / BlePacketPayloadLength);
 
@@ -122,15 +196,15 @@ public class BleSpeaker : IProximitySpeaker
                 endIndex = startIndex + BlePacketPayloadLength;
             }
 
-            var packageToSend = new byte[senderLength + 2 + endIndex - startIndex];
+            var packageToSend = new byte[senderLength + 2 + 8 + endIndex - startIndex];
 
             // copy sender id: 'AB' for example - 2 bytes
             senderIdBytes.CopyTo(packageToSend, 0);
 
-            // copy page # - 1 byte
+            // copy package # - 1 byte
             packageToSend[senderLength] = (byte)i;
 
-            // copy total # of pages - 1 byte
+            // copy total # of packages - 1 byte
             packageToSend[senderLength + 1] = (byte)totalPackages;
 
             // copy other payload - 23 bytes - 8 bytes = 15 bytes
@@ -150,13 +224,13 @@ public class BleSpeaker : IProximitySpeaker
                     ServicesData: new List<ServiceData> { new(appUuid, packageToSend) }));
 
             // copy 'send timestamp'
-            var nowTimestamp = GetCurrentTimestamp();
+            var nowTimestampBytes = GetCurrentTimestamp();
 
             var l = senderLength + 2;
 
-            for (var j = 0; j < nowTimestamp.Length; j++)
+            for (var j = 0; j < nowTimestampBytes.Length; j++)
             {
-                packageToSend[l++] = data[j];
+                packageToSend[l++] = nowTimestampBytes[j];
             }
 
             _bleAdvertiser.StartAdvertising(
@@ -164,7 +238,7 @@ public class BleSpeaker : IProximitySpeaker
                 startSuccessCallback: OnStartSuccess,
                 startFailureCallback: OnStartFailure);
 
-            await Task.Delay(BroadcastDelayBetweenPackages, cancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(AppParameters.BroadcastDelayBetweenPackagesMs), cancellationToken);
 
             _bleAdvertiser.StopAdvertising();
         }
@@ -189,7 +263,7 @@ public class BleSpeaker : IProximitySpeaker
         // 31 - (2 + 2 (uuid) + 2 bytes (deviceId) + 1 (total pages) + 1 (current page)) = 31 - 8 = 23 bytes (payload)
 
         var maxAdvertisingDataLength = _bleExtendedAdvertiser.GetMaxAdvertisingDataLength();
-        var blePacketPayloadLength = maxAdvertisingDataLength - (1 + 2 + 2 + 1 + 1);
+        var blePacketPayloadLength = maxAdvertisingDataLength - (1 + 2 + 2 + 1 + 1 + 8);
 
         var totalPackages = (int)Math.Ceiling((double)data.Length / blePacketPayloadLength);
 
@@ -209,24 +283,34 @@ public class BleSpeaker : IProximitySpeaker
                 endIndex = startIndex + blePacketPayloadLength;
             }
 
-            var packageToSend = new byte[senderLength + 2 + endIndex - startIndex];
+            var packageToSend = new byte[senderLength + 2 + 8 + endIndex - startIndex];
 
             // copy sender id: 'AB' for example - 2 bytes
             senderIdBytes.CopyTo(packageToSend, 0);
 
-            // copy page # - 1 byte
+            // copy package # - 1 byte
             packageToSend[senderLength] = (byte)i;
 
-            // copy total # of pages - 1 byte
+            // copy total # of packages - 1 byte
             packageToSend[senderLength + 1] = (byte)totalPackages;
 
             // copy other payload - 23 bytes
 
-            var k = senderLength + 2;
+            var k = senderLength + 2 + 8;
 
             for (var j = startIndex; j < endIndex; j++)
             {
                 packageToSend[k++] = data[j];
+            }
+
+            // copy 'send timestamp'
+            var nowTimestampBytes = GetCurrentTimestamp();
+
+            var l = senderLength + 2;
+
+            for (var j = 0; j < nowTimestampBytes.Length; j++)
+            {
+                packageToSend[l++] = nowTimestampBytes[j];
             }
 
             var advOptions = new AdvertisementExtendedOptions(
@@ -241,7 +325,7 @@ public class BleSpeaker : IProximitySpeaker
                 startSuccessCallback: OnStartSuccess,
                 startFailureCallback: OnStartFailure);
 
-            await Task.Delay(BroadcastDelayBetweenPackages, cancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(AppParameters.BroadcastDelayBetweenPackagesMs), cancellationToken);
 
             _bleExtendedAdvertiser.StopAdvertising();
         }
