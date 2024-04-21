@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Android.Bluetooth;
 using Android.Bluetooth.LE;
 using Android.Content;
 using Android.OS;
 using ProximitySlides.Core.Exceptions;
-using ProximitySlides.Core.Managers.Advertisers;
 using ProximitySlides.Core.Managers.Advertisers.Classic;
 using ProximitySlides.Core.Managers.Advertisers.Extended;
 using ProximitySlides.Core.Platforms.Android.Ble.Common.Mappers;
@@ -11,13 +12,14 @@ using ProximitySlides.Core.Platforms.Android.Ble.Extended.Mappers;
 
 namespace ProximitySlides.Core.Platforms.Android.Ble.Extended;
 
+[SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
 public class BleExtendedAdvertiser : AdvertisingSetCallback, IBleExtendedAdvertiser
 {
     private Action<BleAdvertiseSettings?>? _onStartSuccessHandler;
     private Action<BleAdvertiseFailure>? _onStartFailureHandler;
 
     public bool IsAdvertising { get; private set; }
-    
+
     public override void OnAdvertisingSetStarted(
         AdvertisingSet? advertisingSet,
         int txPower,
@@ -44,7 +46,7 @@ public class BleExtendedAdvertiser : AdvertisingSetCallback, IBleExtendedAdverti
     public override void OnAdvertisingSetStopped(AdvertisingSet? advertisingSet)
     {
         base.OnAdvertisingSetStopped(advertisingSet);
-        
+
         _onStartFailureHandler?.Invoke(BleAdvertiseFailure.AlreadyStarted);
     }
 
@@ -53,7 +55,7 @@ public class BleExtendedAdvertiser : AdvertisingSetCallback, IBleExtendedAdverti
         var bleManager = Platform.CurrentActivity?.GetSystemService(Context.BluetoothService) as BluetoothManager;
         return bleManager?.Adapter?.LeMaximumAdvertisingDataLength ?? 31;
     }
-    
+
     public void StartAdvertising(
         AdvertisementExtendedOptions options,
         Action<BleAdvertiseSettings?>? startSuccessCallback = null,
@@ -63,28 +65,28 @@ public class BleExtendedAdvertiser : AdvertisingSetCallback, IBleExtendedAdverti
         {
             throw new InvalidOperationException("Advertisement is already running");
         }
-        
+
         var bleManager = Platform.CurrentActivity?.GetSystemService(Context.BluetoothService) as BluetoothManager;
         var bleAdvertiser = bleManager?.Adapter?.BluetoothLeAdvertiser;
-        
+
         var advertiseTxPowerLevel = ExtendedAdvertiseTxMapper.Map(options.Settings.TxPowerLevel);
         var primaryPhy = BluetoothPhyMapper.Map(options.Settings.PrimaryPhy);
         var secondaryPhy = BluetoothPhyMapper.Map(options.Settings.SecondaryPhy);
-        
+
         var parameters = new AdvertisingSetParameters.Builder()
             .SetLegacyMode(false)
-            .SetConnectable(options.Settings.IsConnectable)
+            ?.SetConnectable(options.Settings.IsConnectable)
             ?.SetInterval(options.Settings.Interval)
             ?.SetTxPowerLevel(advertiseTxPowerLevel)
-            .SetPrimaryPhy(primaryPhy)
-            .SetSecondaryPhy(secondaryPhy)
+            ?.SetPrimaryPhy(primaryPhy)
+            ?.SetSecondaryPhy(secondaryPhy)
             ?.Build();
 
         if (parameters is null)
         {
             throw new BleException("Unable to create advertisement settings");
         }
-        
+
         var dataBuilder = new AdvertiseData.Builder()
             .SetIncludeDeviceName(options.Data.IncludeDeviceName)
             ?.SetIncludeTxPowerLevel(options.Data.IncludeTxPowerLevel);
@@ -103,7 +105,7 @@ public class BleExtendedAdvertiser : AdvertisingSetCallback, IBleExtendedAdverti
             throw new BleException("Unable to create advertisement data");
         }
 
-        bleAdvertiser.StartAdvertisingSet(
+        bleAdvertiser?.StartAdvertisingSet(
             parameters: parameters,
             advertiseData: data,
             scanResponse: null,
@@ -122,20 +124,20 @@ public class BleExtendedAdvertiser : AdvertisingSetCallback, IBleExtendedAdverti
         {
             return;
         }
-        
+
         var bleManager = Platform.CurrentActivity?.GetSystemService(Context.BluetoothService) as BluetoothManager;
         var bleAdvertiser = bleManager?.Adapter?.BluetoothLeAdvertiser;
-        
+
         if (bleAdvertiser is null)
         {
             throw new BleNotAvailableException("BluetoothLeAdvertiser is not available");
         }
 
         bleAdvertiser.StopAdvertisingSet(this);
-        
+
         _onStartSuccessHandler = null;
         _onStartFailureHandler = null;
-        
+
         IsAdvertising = false;
     }
 }

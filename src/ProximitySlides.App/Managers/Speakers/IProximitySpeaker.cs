@@ -19,5 +19,10 @@ public interface IProximitySpeaker
         byte[] data,
         CancellationToken cancellationToken);
 
+    Task SendExtendedMessage(
+        string appId,
+        byte[] data,
+        CancellationToken cancellationToken);
+
     SpeakerIdentifier GenerateSenderIdentifier();
 }

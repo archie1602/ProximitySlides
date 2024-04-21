@@ -246,6 +246,86 @@ public class BleSpeaker : IProximitySpeaker
 
     public async Task SendExtendedMessage(
         string appId,
+        byte[] data,
+        CancellationToken cancellationToken)
+    {
+        var appUuid = GetSenderUuid(appId);
+
+        var advSettings = new ExtendedAdvertisementSettings(
+            Interval: AppParameters.ExtendedBleAdvertiseMode,
+            TxPowerLevel: AppParameters.ExtendedBleAdvertiseTx,
+            PrimaryPhy: AdvertisementBluetoothPhy.Le1m,
+            SecondaryPhy: AdvertisementBluetoothPhy.Le2m,
+            IsConnectable: false);
+
+        // 255 - (2 (uuid) + 2 (???) + 1 (total packages) + 1 (current package) + 8) = 31 - 8 = 23 bytes (payload)
+
+        var maxAdvertisingDataLength = 192; //_bleExtendedAdvertiser.GetMaxAdvertisingDataLength();
+        var blePacketPayloadLength = maxAdvertisingDataLength - (2 + 2 + 1 + 1 + 8);
+
+        var totalPackages = (int)Math.Ceiling((double)data.Length / blePacketPayloadLength);
+
+        for (var i = 0; i < totalPackages; i++)
+        {
+            var startIndex = i * blePacketPayloadLength;
+            int endIndex;
+
+            if (i == totalPackages - 1)
+            {
+                endIndex = data.Length;
+            }
+            else
+            {
+                endIndex = startIndex + blePacketPayloadLength;
+            }
+
+            var packageToSend = new byte[2 + 8 + endIndex - startIndex];
+
+            // copy package # - 1 byte
+            packageToSend[0] = (byte)i;
+
+            // copy total # of packages - 1 byte
+            packageToSend[1] = (byte)totalPackages;
+
+            // copy other payload - 23 bytes
+
+            var k = 2 + 8;
+
+            for (var j = startIndex; j < endIndex; j++)
+            {
+                packageToSend[k++] = data[j];
+            }
+
+            // copy 'send timestamp'
+            var nowTimestampBytes = GetCurrentTimestamp();
+
+            var l = 2;
+
+            foreach (var t in nowTimestampBytes)
+            {
+                packageToSend[l++] = t;
+            }
+
+            var advOptions = new AdvertisementExtendedOptions(
+                Settings: advSettings,
+                Data: new AdvertisementCommonData(
+                    IncludeDeviceName: false,
+                    IncludeTxPowerLevel: false,
+                    ServicesData: new List<ServiceData> { new(appUuid, packageToSend) }));
+
+            _bleExtendedAdvertiser.StartAdvertising(
+                options: advOptions,
+                startSuccessCallback: OnStartSuccess,
+                startFailureCallback: OnStartFailure);
+
+            await Task.Delay(TimeSpan.FromMilliseconds(AppParameters.BroadcastDelayBetweenPackagesMs), cancellationToken);
+
+            _bleExtendedAdvertiser.StopAdvertising();
+        }
+    }
+
+    public async Task SendExtendedMessage(
+        string appId,
         SpeakerIdentifier speakerIdentifier,
         byte[] data,
         CancellationToken cancellationToken)
@@ -254,7 +334,7 @@ public class BleSpeaker : IProximitySpeaker
         var senderIdBytes = Encoding.ASCII.GetBytes(speakerIdentifier.SpeakerId);
 
         var advSettings = new ExtendedAdvertisementSettings(
-            Interval: ExtendedAdvertisementInterval.IntervalHigh,
+            Interval: ExtendedAdvertisementInterval.IntervalLow,
             TxPowerLevel: BleExtendedAdvertiseTx.High,
             PrimaryPhy: AdvertisementBluetoothPhy.Le1m,
             SecondaryPhy: AdvertisementBluetoothPhy.Le2m,

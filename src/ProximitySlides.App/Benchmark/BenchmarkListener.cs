@@ -11,6 +11,7 @@ using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
 using ProximitySlides.App.Metrics;
 using ProximitySlides.App.ViewModels;
+using ProximitySlides.Core.Managers.Advertisers.Extended;
 using ProximitySlides.Core.Managers.Scanners;
 
 namespace ProximitySlides.App.Benchmark;
@@ -28,9 +29,10 @@ public class BenchmarkListener : IBenchmarkListener
     private readonly IBleScanner _bleScanner;
     private readonly ILogger<BenchmarkListener> _logger;
 
-    public BenchmarkListener(IBleScanner bleScanner)
+    public BenchmarkListener(IBleScanner bleScanner, ILogger<BenchmarkListener> logger)
     {
         _bleScanner = bleScanner;
+        _logger = logger;
     }
 
     private void OnScanResult(BleScanCallbackType callbackType, ScanResult? result)
@@ -49,6 +51,8 @@ public class BenchmarkListener : IBenchmarkListener
             {
                 return;
             }
+
+            _logger.LogInformation("Bytes: {PayloadLength}", bytes.Length);
 
             var sendAtBytes = bytes[2..(2 + 8)];
             var sendAtUnixEpoch = BitConverter.ToInt64(sendAtBytes);
@@ -120,8 +124,19 @@ public class BenchmarkListener : IBenchmarkListener
                     PayloadLength = slideMsg.Message.Length,
                     TransferTime = slideMsg.TotalTransmissionTime.TotalMilliseconds,
                     IsExtendedAdvertising = AppParameters.IsExtendedAdvertising,
-                    BleAdvertiseMode = AppParameters.BleAdvertiseMode.ToString(),
-                    BleAdvertiseTx = AppParameters.BleAdvertiseTx.ToString(),
+                    BleAdvertiseMode = AppParameters.IsExtendedAdvertising
+                        ? AppParameters.ExtendedBleAdvertiseMode switch
+                        {
+                            ExtendedAdvertisementInterval.IntervalLow => "IntervalLow",
+                            ExtendedAdvertisementInterval.IntervalHigh => "IntervalHigh",
+                            ExtendedAdvertisementInterval.IntervalMax => "IntervalMax",
+                            ExtendedAdvertisementInterval.IntervalMedium => "IntervalMedium",
+                            161 => "IntervalMin"
+                        }
+                        : AppParameters.BleAdvertiseMode.ToString(),
+                    BleAdvertiseTx = AppParameters.IsExtendedAdvertising
+                        ? AppParameters.ExtendedBleAdvertiseTx.ToString()
+                        : AppParameters.BleAdvertiseTx.ToString(),
                     BleScanMode = AppParameters.BleScanMode.ToString(),
                     DelayBetweenCirclesMs = AppParameters.BroadcastDelayBetweenCirclesMs,
                     DelayBetweenPackagesMs = AppParameters.BroadcastDelayBetweenPackagesMs,

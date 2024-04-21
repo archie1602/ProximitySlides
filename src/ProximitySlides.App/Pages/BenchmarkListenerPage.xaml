@@ -11,7 +11,7 @@
     Title="Benchmark.Listener">
 
     <Grid
-        RowDefinitions="50, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, *"
+        RowDefinitions="50, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, *"
         ColumnDefinitions=".25*, .50*, .25*">
 
         <Label
@@ -37,62 +37,57 @@
             Text="Share metrics"
             Command="{Binding ShareMetricsFileButtonClickedCommand}" />
 
-        <Entry
-            Text="{Binding BroadcastDelayBetweenCirclesMs}"
+        <Button
             Grid.Row="3"
             Grid.ColumnSpan="3"
-            Placeholder="Enter circles delay"
-            FontFamily="Helvetica"
-            FontSize="22"
-            MaxLength="20" />
-
-        <Entry
-            Text="{Binding BroadcastDelayBetweenPackagesMs}"
-            Grid.Row="4"
-            Grid.ColumnSpan="3"
-            Placeholder="Enter packages delay"
-            FontFamily="Helvetica"
-            FontSize="22"
-            MaxLength="20" />
+            Margin="5, 5, 5, 5"
+            Text="Remove metrics"
+            Command="{Binding RemoveMetricsFileButtonClickedCommand}" />
 
         <Entry
             Text="{Binding BleVersion}"
-            Grid.Row="5"
+            Grid.Row="4"
             Grid.ColumnSpan="3"
             Placeholder="Enter ble version"
-            FontFamily="Helvetica"
-            FontSize="22"
-            MaxLength="20" />
-
-        <Entry
-            Text="{Binding AdvertisingMode}"
-            Grid.Row="6"
-            Grid.ColumnSpan="3"
-            Placeholder="Enter advertising mode"
-            FontFamily="Helvetica"
-            FontSize="22"
-            MaxLength="20" />
-
-        <Entry
-            Text="{Binding AdvertisingTx}"
-            Grid.Row="7"
-            Grid.ColumnSpan="3"
-            Placeholder="Enter advertising tx"
-            FontFamily="Helvetica"
-            FontSize="22"
-            MaxLength="20" />
+            FontSize="22" />
 
         <Entry
             Text="{Binding ScanMode}"
-            Grid.Row="8"
+            Grid.Row="5"
             Grid.ColumnSpan="3"
             Placeholder="Enter scan mode"
-            FontFamily="Helvetica"
-            FontSize="22"
-            MaxLength="20" />
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding BroadcastDelayBetweenCirclesMs}"
+            Grid.Row="6"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter circles delay"
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding BroadcastDelayBetweenPackagesMs}"
+            Grid.Row="7"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter packages delay"
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding AdvertisingMode}"
+            Grid.Row="8"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter advertising mode"
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding AdvertisingTx}"
+            Grid.Row="9"
+            Grid.ColumnSpan="3"
+            Placeholder="Enter advertising tx"
+            FontSize="22" />
 
         <Button
-            Grid.Row="9"
+            Grid.Row="10"
             Grid.ColumnSpan="3"
             Margin="5, 5, 5, 5"
             Text="Save settings"

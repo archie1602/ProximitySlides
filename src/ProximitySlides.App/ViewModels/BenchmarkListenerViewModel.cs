@@ -8,6 +8,7 @@ using ProximitySlides.App.Benchmark;
 using ProximitySlides.App.Helpers;
 using ProximitySlides.App.Managers;
 using ProximitySlides.Core.Managers.Advertisers.Classic;
+using ProximitySlides.Core.Managers.Advertisers.Extended;
 using ProximitySlides.Core.Managers.Scanners;
 
 namespace ProximitySlides.App.ViewModels;
@@ -21,26 +22,19 @@ public partial class BenchmarkListenerViewModel : ObservableObject
 
     private bool _isScanning;
 
-    [ObservableProperty]
-    private string _syncTime = null!;
+    [ObservableProperty] private string _syncTime = null!;
 
-    [ObservableProperty]
-    private int _broadcastDelayBetweenCirclesMs;
+    [ObservableProperty] private int _bleVersion;
 
-    [ObservableProperty]
-    private int _broadcastDelayBetweenPackagesMs;
+    [ObservableProperty] private int _scanMode;
 
-    [ObservableProperty]
-    private int _bleVersion;
+    [ObservableProperty] private int _broadcastDelayBetweenCirclesMs;
 
-    [ObservableProperty]
-    private int _advertisingMode;
+    [ObservableProperty] private int _broadcastDelayBetweenPackagesMs;
 
-    [ObservableProperty]
-    private int _advertisingTx;
+    [ObservableProperty] private int _advertisingMode;
 
-    [ObservableProperty]
-    private int _scanMode;
+    [ObservableProperty] private int _advertisingTx;
 
     public BenchmarkListenerViewModel(
         IBenchmarkListener benchmarkListener,
@@ -48,12 +42,13 @@ public partial class BenchmarkListenerViewModel : ObservableObject
     {
         SyncTime = "Init";
 
+        BleVersion = AppParameters.IsExtendedAdvertising ? 5 : 4;
+        ScanMode = (int)AppParameters.BleScanMode;
+
         BroadcastDelayBetweenCirclesMs = AppParameters.BroadcastDelayBetweenCirclesMs;
         BroadcastDelayBetweenPackagesMs = AppParameters.BroadcastDelayBetweenPackagesMs;
-        BleVersion = AppParameters.IsExtendedAdvertising ? 5 : 4;
-        AdvertisingMode = (int)AppParameters.BleAdvertiseMode;
-        AdvertisingTx = (int)AppParameters.BleAdvertiseTx;
-        ScanMode = (int)AppParameters.BleScanMode;
+        AdvertisingMode = AppParameters.IsExtendedAdvertising ? AppParameters.ExtendedBleAdvertiseMode : (int)AppParameters.BleAdvertiseMode;
+        AdvertisingTx = AppParameters.IsExtendedAdvertising ? (int)AppParameters.ExtendedBleAdvertiseTx : (int)AppParameters.BleAdvertiseTx;
 
         _benchmarkListener = benchmarkListener;
         _appSettings = configuration.GetConfigurationSettings<AppSettings>();
@@ -69,7 +64,6 @@ public partial class BenchmarkListenerViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-
         }
     }
 
@@ -110,48 +104,29 @@ public partial class BenchmarkListenerViewModel : ObservableObject
         }
 
         await Share.Default.RequestAsync(
-            new ShareFileRequest
-            {
-                Title = "ble_metrics.csv",
-                File = new ShareFile(MetricBasePath)
-            });
+            new ShareFileRequest { Title = "ble_metrics.csv", File = new ShareFile(MetricBasePath) });
+    }
+
+    [RelayCommand]
+    private async Task OnRemoveMetricsFileButtonClicked()
+    {
+        if (!File.Exists(MetricBasePath))
+        {
+            await Shell.Current.DisplayAlert("Not Found", "File not found", "ok");
+            return;
+        }
+
+        File.Delete(MetricBasePath);
     }
 
     [RelayCommand]
     private async Task OnSaveSettingsButtonClicked()
     {
-        if (BroadcastDelayBetweenCirclesMs >= 0)
-        {
-            AppParameters.BroadcastDelayBetweenCirclesMs = BroadcastDelayBetweenCirclesMs;
-        }
-
-        if (BroadcastDelayBetweenPackagesMs >= 0)
-        {
-            AppParameters.BroadcastDelayBetweenPackagesMs = BroadcastDelayBetweenPackagesMs;
-        }
-
         AppParameters.IsExtendedAdvertising = BleVersion switch
         {
             4 => false,
             5 => true,
             _ => false
-        };
-
-        AppParameters.BleAdvertiseMode = AdvertisingMode switch
-        {
-            0 => BleAdvertiseMode.LowPower,
-            1 => BleAdvertiseMode.Balanced,
-            2 => BleAdvertiseMode.LowLatency,
-            _ => BleAdvertiseMode.LowPower
-        };
-
-        AppParameters.BleAdvertiseTx = AdvertisingTx switch
-        {
-            0 => BleAdvertiseTx.PowerUltraLow,
-            1 => BleAdvertiseTx.PowerLow,
-            2 => BleAdvertiseTx.PowerMedium,
-            3 => BleAdvertiseTx.PowerHigh,
-            _ => BleAdvertiseTx.PowerUltraLow
         };
 
         AppParameters.BleScanMode = ScanMode switch
@@ -163,11 +138,70 @@ public partial class BenchmarkListenerViewModel : ObservableObject
             _ => BleScanMode.Opportunistic
         };
 
+        if (BroadcastDelayBetweenCirclesMs >= 0)
+        {
+            AppParameters.BroadcastDelayBetweenCirclesMs = BroadcastDelayBetweenCirclesMs;
+        }
+
+        if (BroadcastDelayBetweenPackagesMs >= 0)
+        {
+            AppParameters.BroadcastDelayBetweenPackagesMs = BroadcastDelayBetweenPackagesMs;
+        }
+
+        if (AppParameters.IsExtendedAdvertising)
+        {
+            AppParameters.ExtendedBleAdvertiseMode = AdvertisingMode switch
+            {
+                1600 => ExtendedAdvertisementInterval.IntervalHigh,
+                160 => ExtendedAdvertisementInterval.IntervalLow,
+                16777215 => ExtendedAdvertisementInterval.IntervalMax,
+                400 => ExtendedAdvertisementInterval.IntervalMedium,
+                161 => ExtendedAdvertisementInterval.IntervalMin,
+                _ => ExtendedAdvertisementInterval.IntervalHigh
+            };
+
+            AdvertisingMode = AppParameters.ExtendedBleAdvertiseMode;
+
+            AppParameters.ExtendedBleAdvertiseTx = AdvertisingTx switch
+            {
+                0 => BleExtendedAdvertiseTx.Min,
+                1 => BleExtendedAdvertiseTx.UltraLow,
+                2 => BleExtendedAdvertiseTx.Low,
+                3 => BleExtendedAdvertiseTx.Medium,
+                4 => BleExtendedAdvertiseTx.High,
+                5 => BleExtendedAdvertiseTx.Max,
+                _ => BleExtendedAdvertiseTx.Min
+            };
+
+            AdvertisingTx = (int)AppParameters.ExtendedBleAdvertiseTx;
+        }
+        else
+        {
+            AppParameters.BleAdvertiseMode = AdvertisingMode switch
+            {
+                0 => BleAdvertiseMode.LowPower,
+                1 => BleAdvertiseMode.Balanced,
+                2 => BleAdvertiseMode.LowLatency,
+                _ => BleAdvertiseMode.LowPower
+            };
+
+            AdvertisingMode = (int)AppParameters.BleAdvertiseMode;
+
+            AppParameters.BleAdvertiseTx = AdvertisingTx switch
+            {
+                0 => BleAdvertiseTx.PowerUltraLow,
+                1 => BleAdvertiseTx.PowerLow,
+                2 => BleAdvertiseTx.PowerMedium,
+                3 => BleAdvertiseTx.PowerHigh,
+                _ => BleAdvertiseTx.PowerUltraLow
+            };
+
+            AdvertisingTx = (int)AppParameters.BleAdvertiseTx;
+        }
+
+        BleVersion = AppParameters.IsExtendedAdvertising ? 5 : 4;
+        ScanMode = (int)AppParameters.BleScanMode;
         BroadcastDelayBetweenCirclesMs = AppParameters.BroadcastDelayBetweenCirclesMs;
         BroadcastDelayBetweenPackagesMs = AppParameters.BroadcastDelayBetweenPackagesMs;
-        BleVersion = AppParameters.IsExtendedAdvertising ? 5 : 4;
-        AdvertisingMode = (int)AppParameters.BleAdvertiseMode;
-        AdvertisingTx = (int)AppParameters.BleAdvertiseTx;
-        ScanMode = (int)AppParameters.BleScanMode;
     }
 }
