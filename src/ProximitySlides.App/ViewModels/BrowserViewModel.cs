@@ -34,7 +34,7 @@ public partial class BrowserViewModel : ObservableObject
 
     [ObservableProperty] private StoredPresentation? _selectedItem;
 
-    private void SetFileForm(FileResult? file = null, string name = "Filename")
+    private void SetFileForm(FileResult? file = null, string name = "Имя файла")
     {
         _selectedFileResult = file;
         SelectedFileNameText = name;

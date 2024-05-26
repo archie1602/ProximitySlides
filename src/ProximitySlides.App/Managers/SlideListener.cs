@@ -59,25 +59,6 @@ public class SlideListener(
                 return;
             }
 
-            var now = DateTime.Now;
-
-            // BleMetricsHandler.SaveMetrics(
-            //     new BleMetric
-            //     {
-            //         DeviceName = DeviceInfo.Current.Name,
-            //         PayloadLength = slideMsg.PayloadLength,
-            //         SpeakerId = _speakerPackages.First().SpeakerId,
-            //         TransferTime = slideMsg.TotalTransmissionTime.TotalMilliseconds,
-            //         IsExtendedAdvertising = AppParameters.IsExtendedAdvertising,
-            //         DelayBetweenCirclesMs = AppParameters.BroadcastPeriodBetweenCirclesMs,
-            //         DelayBetweenPackagesMs = AppParameters.BroadcastDelayBetweenPackagesMs,
-            //         MinRssi = slideMsg.PackagesRssi.Min(),
-            //         MaxRssi = slideMsg.PackagesRssi.Max(),
-            //         AverageRssi = slideMsg.PackagesRssi.Average(),
-            //         CreatedAt = now,
-            //         Ticks = now.Ticks
-            //     });
-
             var t = InvokeHandler(slideMsg);
 
             if (t is not null)

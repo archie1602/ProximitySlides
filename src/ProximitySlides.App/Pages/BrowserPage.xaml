@@ -6,7 +6,8 @@
              xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
              xmlns:models="clr-namespace:ProximitySlides.App.Models"
              x:Class="ProximitySlides.App.Pages.BrowserPage"
-             x:DataType="viewModels:BrowserViewModel">
+             x:DataType="viewModels:BrowserViewModel"
+             Title="Загрузка презентации">
 
     <Grid RowDefinitions="100, Auto, *, Auto"
           ColumnDefinitions=".50*, .50*">
@@ -25,13 +26,13 @@
         <Button Margin="10,0,10,0"
                 Grid.Column="1"
                 HeightRequest="50"
-                Text="Select"
+                Text="Выбрать"
                 Command="{Binding FilePickerButtonClickedCommand}" />
 
         <Button Grid.Row="1"
                 Grid.ColumnSpan="2"
                 HeightRequest="50"
-                Text="Upload"
+                Text="Загрузить"
                 Margin="10,0,10,0"
                 Command="{Binding UploadFileButtonClickedCommand}" />
 
@@ -48,7 +49,7 @@
                     <SwipeView>
                         <SwipeView.RightItems>
                             <SwipeItems>
-                                <SwipeItem Text="Delete"
+                                <SwipeItem Text="Удалить"
                                            IconImageSource="trash_can.svg"
                                            BackgroundColor="Pink">
                                 </SwipeItem>
@@ -74,7 +75,7 @@
         <Button Grid.Row="3"
                 Grid.ColumnSpan="2"
                 HeightRequest="50"
-                Text="Start"
+                Text="Перейти к трансляции"
                 Margin="10,0,10,10"
                 Command="{Binding StartButtonClickedCommand}" />
 

@@ -8,7 +8,7 @@
     x:Class="ProximitySlides.App.Pages.BenchmarkListenerPage"
     xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
     x:DataType="viewModels:BenchmarkListenerViewModel"
-    Title="Benchmark.Listener">
+    Title="Бенчмаркинг сканирование">
 
     <Grid
         RowDefinitions="50, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, *"
@@ -27,70 +27,70 @@
             Grid.Row="1"
             Grid.ColumnSpan="3"
             Margin="5, 5, 5, 5"
-            Text="Start scanning"
+            Text="Начать сканирование"
             Command="{Binding StartScanningButtonClickedCommand}" />
 
         <Button
             Grid.Row="2"
             Grid.ColumnSpan="3"
             Margin="5, 5, 5, 5"
-            Text="Share metrics"
+            Text="Поделиться результатами"
             Command="{Binding ShareMetricsFileButtonClickedCommand}" />
 
         <Button
             Grid.Row="3"
             Grid.ColumnSpan="3"
             Margin="5, 5, 5, 5"
-            Text="Remove metrics"
+            Text="Удалить результаты"
             Command="{Binding RemoveMetricsFileButtonClickedCommand}" />
 
         <Entry
             Text="{Binding BleVersion}"
             Grid.Row="4"
             Grid.ColumnSpan="3"
-            Placeholder="Enter ble version"
+            Placeholder="Выберите BLE версию"
             FontSize="22" />
 
         <Entry
             Text="{Binding ScanMode}"
             Grid.Row="5"
             Grid.ColumnSpan="3"
-            Placeholder="Enter scan mode"
+            Placeholder="Выберите режим сканирования"
             FontSize="22" />
 
         <Entry
             Text="{Binding BroadcastDelayBetweenCirclesMs}"
             Grid.Row="6"
             Grid.ColumnSpan="3"
-            Placeholder="Enter circles delay"
+            Placeholder="Задержка передачи слайдов"
             FontSize="22" />
 
         <Entry
             Text="{Binding BroadcastDelayBetweenPackagesMs}"
             Grid.Row="7"
             Grid.ColumnSpan="3"
-            Placeholder="Enter packages delay"
+            Placeholder="Задержка передачи пакетов"
             FontSize="22" />
 
         <Entry
             Text="{Binding AdvertisingMode}"
             Grid.Row="8"
             Grid.ColumnSpan="3"
-            Placeholder="Enter advertising mode"
+            Placeholder="Выберите режим вещания"
             FontSize="22" />
 
         <Entry
             Text="{Binding AdvertisingTx}"
             Grid.Row="9"
             Grid.ColumnSpan="3"
-            Placeholder="Enter advertising tx"
+            Placeholder="Выберите мощность вещания"
             FontSize="22" />
 
         <Button
             Grid.Row="10"
             Grid.ColumnSpan="3"
             Margin="5, 5, 5, 5"
-            Text="Save settings"
+            Text="Сохранить настройки"
             Command="{Binding SaveSettingsButtonClickedCommand}" />
 
     </Grid>

@@ -25,7 +25,7 @@ public partial class BenchmarkSpeakerViewModel : ObservableObject
         IProximitySpeaker proximitySpeaker,
         IConfiguration configuration)
     {
-        TestCaseNumberText = "Init";
+        TestCaseNumberText = "Инициализация";
 
         TestCase = 0;
         BroadcastDelayBetweenCirclesMs = AppParameters.BroadcastDelayBetweenCirclesMs;

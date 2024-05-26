@@ -1,4 +1,4 @@
-﻿<?xml
+<?xml
     version="1.0"
     encoding="utf-8"?>
 
@@ -8,27 +8,27 @@
     x:Class="ProximitySlides.App.Pages.MainPage"
     xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
     x:DataType="viewModels:MainViewModel"
-    Title="Home">
+    Title="Главная">
 
     <VerticalStackLayout
         Spacing="10"
         Margin="10">
 
         <Button
-            Text="Speaker"
+            Text="Докладчик"
             Command="{Binding NavigateToSpeakerCommand}" />
 
         <Button
-            Text="Listener"
+            Text="Слушатель"
             Command="{Binding NavigateToListenerCommand}" />
 
-        <Button
-            Text="Benchmark.Speaker"
+        <!--<Button
+            Text="Бенчмаркинг вещание"
             Command="{Binding NavigateToBenchmarkSpeakerCommand}" />
 
         <Button
-            Text="Benchmark.Listener"
-            Command="{Binding NavigateToBenchmarkListenerCommand}" />
+            Text="Бенчмаркинг сканирование"
+            Command="{Binding NavigateToBenchmarkListenerCommand}" />-->
 
     </VerticalStackLayout>
 

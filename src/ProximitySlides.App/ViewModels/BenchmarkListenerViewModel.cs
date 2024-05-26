@@ -40,7 +40,7 @@ public partial class BenchmarkListenerViewModel : ObservableObject
         IBenchmarkListener benchmarkListener,
         IConfiguration configuration)
     {
-        SyncTime = "Init";
+        SyncTime = "Инициализация";
 
         BleVersion = AppParameters.IsExtendedAdvertising ? 5 : 4;
         ScanMode = (int)AppParameters.BleScanMode;

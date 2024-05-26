@@ -31,9 +31,9 @@
         <!--        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>-->
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-        <_MauiForceXamlCForDebug>true</_MauiForceXamlCForDebug>
-    </PropertyGroup>
+<!--    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">-->
+<!--        <_MauiForceXamlCForDebug>true</_MauiForceXamlCForDebug>-->
+<!--    </PropertyGroup>-->
 
     <ItemGroup>
         <!-- App Icon -->

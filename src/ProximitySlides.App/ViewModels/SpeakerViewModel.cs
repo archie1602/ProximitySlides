@@ -119,31 +119,31 @@ public partial class SpeakerViewModel : ObservableObject
     private void SetActiveSlidePage(int page)
     {
         _currentSlidePage = page;
-        SlideNavigationText = $"Page: {page}/{_totalSlidePages}";
+        SlideNavigationText = $"Слайд: {page}/{_totalSlidePages}";
     }
 
     private void SetSpeakerId()
     {
         if (_isBroadcastingStart)
         {
-            SpeakerIdText = $"Id: {_speakerId.SpeakerId}";
+            SpeakerIdText = $"Докладчик: {_speakerId.SpeakerId}";
             return;
         }
 
-        SpeakerIdText = "Id: NULL";
+        SpeakerIdText = "Докладчик: NULL";
     }
 
     private void SetBroadcastingButton()
     {
         if (_isBroadcastingStart)
         {
-            BroadcastingButtonText = "Stop";
+            BroadcastingButtonText = "Остановить трансляцию";
             BroadcastingButtonBgColor = Color.FromRgb(220, 20, 60);
 
             return;
         }
 
-        BroadcastingButtonText = "Start";
+        BroadcastingButtonText = "Запустить трансляцию";
         BroadcastingButtonBgColor = Color.FromRgb(144, 238, 144);
     }
 
@@ -172,6 +172,8 @@ public partial class SpeakerViewModel : ObservableObject
 
                 // TODO: move to config
                 await Task.Delay(TimeSpan.FromMilliseconds(AppParameters.BroadcastDelayBetweenCirclesMs), _broadcastingSlidesCts.Token);
+
+                SpeakerIdText = "Докладчик: U5";
             }
         }
         catch (Exception e)

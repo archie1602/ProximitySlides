@@ -31,17 +31,32 @@ public class GoogleDriveHelper
 
                 break;
 
-            case "getting_started_docker.pdf":
+            case "Введение в Docker.pdf":
 
                 links = new Dictionary<int, string>
                 {
-                    { 1, "aSDbsdhsh6733hds8nbr8ner85bnf8nr84nf8n48ng8j58fngf85nf88gn58gngjjf85nf88gn5n898dnajdsds9ds7n548485nf" },
+                    { 1, "a1" },
                     { 2, "a2" },
                     { 3, "a3" },
                     { 4, "a4" },
                     { 5, "a5" },
                     { 6, "a6" },
                     { 7, "a7" }
+                };
+
+                break;
+
+            case "Технология BLE.pdf":
+
+                links = new Dictionary<int, string>
+                {
+                    { 1, "q1" },
+                    { 2, "q2" },
+                    { 3, "q3" },
+                    { 4, "q4" },
+                    { 5, "q5" },
+                    { 6, "q6" },
+                    { 7, "q7" }
                 };
 
                 break;

@@ -45,9 +45,6 @@ public partial class PresentationViewModel(
     [ObservableProperty]
     private string _speakerId = null!;
 
-    [ObservableProperty]
-    private string _syncTime = null!;
-
     private DateTime? _lastReceivedMessageTime = DateTime.UtcNow;
 
     private const string SlideNamePattern = "slide_{0}.pdf";
@@ -58,12 +55,6 @@ public partial class PresentationViewModel(
         try
         {
             _lastReceivedMessageTime = DateTime.UtcNow;
-
-            var ttt = slideMsg.TotalTransmissionTime;
-
-            SyncTime = $"{ttt.Seconds}:{ttt.Milliseconds}:{ttt.Microseconds}|{slideMsg.PackagesRssi.Min()};{slideMsg.PackagesRssi.Max()}|{slideMsg.FileIdLength}";
-
-            return;
 
             if (_speakerSlides.TryGetValue(slideMsg.CurrentSlide, out var existingSlide))
             {
@@ -102,6 +93,8 @@ public partial class PresentationViewModel(
             {
                 throw new InvalidOperationException("Couldn't add a new slide to the dictionary");
             }
+
+            SpeakerId = "Докладчик: U5";
 
             CurrentSlide = newSlide;
             CurrentSlidePage = newSlide.CurrentSlide;
@@ -214,12 +207,10 @@ public partial class PresentationViewModel(
                 listenResultCallback: OnReceivedSlide,
                 listenFailedCallback: OnListenFailed);
 
-            return;
-
             _checkSpeakerActivityCts = new CancellationTokenSource();
             _checkSpeakerActivityTask = Task.Run(CheckSpeakerActivityJob, _checkSpeakerActivityCts.Token);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // TODO:
         }
