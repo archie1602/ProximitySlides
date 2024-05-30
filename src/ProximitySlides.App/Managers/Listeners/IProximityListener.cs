@@ -4,15 +4,17 @@ namespace ProximitySlides.App.Managers.Listeners;
 
 public interface IProximityListener
 {
-    void StartListenSpeaker(
+    void StartListenConcreteSpeaker(
+        bool isExtended,
         string appId,
-        SenderIdentifier senderIdentifier,
-        Action<BlePackageModel>? listenResultCallback,
+        SpeakerIdentifier speakerIdentifier,
+        Action<BlePackageMessage>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback);
 
     void StartListenAllSpeakers(
+        bool isExtended,
         string appId,
-        Action<BlePackageModel>? listenResultCallback,
+        Action<BlePackageMessage>? listenResultCallback,
         Action<ListenFailed>? listenFailedCallback);
 
     void StopListen();

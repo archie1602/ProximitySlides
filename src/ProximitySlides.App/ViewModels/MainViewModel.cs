@@ -9,12 +9,24 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task NavigateToSpeaker()
     {
-        await Shell.Current.GoToAsync(nameof(SpeakerPage));
+        await Shell.Current.GoToAsync(nameof(BrowserPage));
     }
 
     [RelayCommand]
     private async Task NavigateToListener()
     {
         await Shell.Current.GoToAsync(nameof(ListenerPage));
+    }
+
+    [RelayCommand]
+    private async Task NavigateToBenchmarkSpeaker()
+    {
+        await Shell.Current.GoToAsync(nameof(BenchmarkSpeakerPage));
+    }
+
+    [RelayCommand]
+    private async Task NavigateToBenchmarkListener()
+    {
+        await Shell.Current.GoToAsync(nameof(BenchmarkListenerPage));
     }
 }

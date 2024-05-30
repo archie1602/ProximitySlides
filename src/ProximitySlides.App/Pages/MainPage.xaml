@@ -1,17 +1,35 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ProximitySlides.App.Pages.MainPage"
-             xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
-             x:DataType="viewModels:MainViewModel">
-    
-    <VerticalStackLayout Spacing="10"
-                         Margin="10">
-        <Button Text="Speaker"
-                Command="{Binding NavigateToSpeakerCommand}"/>
-        
-        <Button Text="Listener"
-                Command="{Binding NavigateToListenerCommand}"/>
+<?xml
+    version="1.0"
+    encoding="utf-8"?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="ProximitySlides.App.Pages.MainPage"
+    xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
+    x:DataType="viewModels:MainViewModel"
+    Title="Главная">
+
+    <VerticalStackLayout
+        Spacing="10"
+        Margin="10">
+
+        <Button
+            Text="Докладчик"
+            Command="{Binding NavigateToSpeakerCommand}" />
+
+        <Button
+            Text="Слушатель"
+            Command="{Binding NavigateToListenerCommand}" />
+
+        <!--<Button
+            Text="Бенчмаркинг вещание"
+            Command="{Binding NavigateToBenchmarkSpeakerCommand}" />
+
+        <Button
+            Text="Бенчмаркинг сканирование"
+            Command="{Binding NavigateToBenchmarkListenerCommand}" />-->
+
     </VerticalStackLayout>
 
 </ContentPage>

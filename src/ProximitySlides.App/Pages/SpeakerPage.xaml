@@ -1,48 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="ProximitySlides.App.Pages.SpeakerPage"
              xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
-             x:DataType="viewModels:SpeakerViewModel">
-    
+             x:DataType="viewModels:SpeakerViewModel"
+             Title="Трансляция презентации">
+
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             EventName="Appearing"
-            Command="{Binding AppearingCommand}"/>
-        
-        <toolkit:EventToCommandBehavior
-            EventName="Disappearing"
-            Command="{Binding DisappearingCommand}"/>
+            Command="{Binding AppearingCommand}" />
     </ContentPage.Behaviors>
-    
-    <Grid RowDefinitions="50, Auto, *"
-          ColumnDefinitions=".75*, .25*">
-        
-        <Label Text="Speaker page"
-               FontSize="22"
-               Grid.ColumnSpan="2"
-               BackgroundColor="Aqua"
-               HorizontalTextAlignment="Center"
-               VerticalTextAlignment="Center"/>
-        
-        <Entry Placeholder="Enter link"
-               Text="{Binding Link}"
-               Grid.Row="1"
-               BackgroundColor="Green"/>
-        
-        <Switch IsToggled="{Binding IsBroadcastingToggled}"
-                Grid.Row="1"
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding BackButtonClickedCommand}"></BackButtonBehavior>
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="50, 300, Auto, *"
+          ColumnDefinitions=".25*, .50*, .25*">
+
+        <Grid Grid.ColumnSpan="3"
+              ColumnDefinitions=".50*, .50*">
+            <Label
+                Padding="10, 0, 0, 0"
+                FontSize="20"
+                HorizontalTextAlignment="Start"
+                VerticalTextAlignment="Center"
+                Text="{Binding SpeakerIdText}" />
+
+            <Label
+                Padding="0, 0, 10, 0"
                 Grid.Column="1"
-                BackgroundColor="Red">
-            <Switch.Behaviors>
-                <toolkit:EventToCommandBehavior
-                    x:TypeArguments="ToggledEventArgs"
-                    EventName="Toggled"
-                    Command="{Binding BroadcastingToggledCommand}"/>
-            </Switch.Behaviors>
-        </Switch>
-        
+                FontSize="20"
+                HorizontalTextAlignment="End"
+                VerticalTextAlignment="Center"
+                Text="{Binding SlideNavigationText}" />
+        </Grid>
+
+        <Image Grid.Row="1"
+               Grid.ColumnSpan="3"
+               Source="{Binding ActiveSlide}" />
+
+        <ImageButton Grid.Row="2"
+                     Source="navigation_left_arrow.png"
+                     WidthRequest="50"
+                     HeightRequest="50"
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center"
+                     Command="{Binding PrevSlideClickedCommand}" />
+
+        <Button Grid.Row="2"
+                Grid.Column="1"
+                WidthRequest="200"
+                HeightRequest="50"
+                Text="{Binding BroadcastingButtonText}"
+                FontSize="20"
+                FontAttributes="Bold"
+                BackgroundColor="{Binding BroadcastingButtonBgColor}"
+                Command="{Binding StartStopBroadcastingClickedCommand}" />
+
+        <ImageButton Grid.Row="2"
+                     Grid.Column="2"
+                     Source="navigation_right_arrow.png"
+                     WidthRequest="50"
+                     HeightRequest="50"
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center"
+                     Command="{Binding NextSlideClickedCommand}" />
+
     </Grid>
-    
+
 </ContentPage>

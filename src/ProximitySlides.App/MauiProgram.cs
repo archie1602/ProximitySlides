@@ -1,12 +1,13 @@
 ﻿using System.Reflection;
 using CommunityToolkit.Maui;
+using MetroLog.MicrosoftExtensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProximitySlides.App.Configuration;
-using ProximitySlides.App.Managers;
 using ProximitySlides.App.Managers.Listeners;
-using ProximitySlides.App.Managers.Senders;
-using ProximitySlides.App.Platforms.Android.Managers;
+using ProximitySlides.App.Managers.Speakers;
+using ProximitySlides.Core;
+using SkiaSharp;
 
 namespace ProximitySlides.App;
 
@@ -25,21 +26,24 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
+        builder.Logging.AddTraceLogger(_ => { });
         builder.AddAppSettings();
 
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
 
-        builder.Services.AddServices(builder.Configuration);
+        builder.Services.AddApp(builder.Configuration);
+        builder.Services.AddCore();
 
-        builder.Services.AddSingleton<IBleScanner, BleScanner>();
-        builder.Services.AddSingleton<IBleAdvertiser, BleAdvertiser>();
-
-        builder.Services.AddSingleton<IProximitySender, BleSender>();
+        builder.Services.AddSingleton<IProximitySpeaker, BleSpeaker>();
         builder.Services.AddSingleton<IProximityListener, BleListener>();
 
-        return builder.Build();
+        builder.Services.AddSingleton(FilePicker.Default);
+
+        var app = builder.Build();
+
+        return app;
     }
 
     private static void AddAppSettings(this MauiAppBuilder builder)

@@ -1,4 +1,6 @@
-﻿using JetBrains.Annotations;
+﻿using System.ComponentModel.DataAnnotations;
+
+using JetBrains.Annotations;
 
 namespace ProximitySlides.App.Applications;
 
@@ -6,6 +8,8 @@ namespace ProximitySlides.App.Applications;
 public class AppSettings : IBaseSettings
 {
     public string SectionName => "App";
-    
+
     public string AppAdvertiserId { get; set; } = null!;
+
+    public string FileSharingUrlPrefix { get; set; } = null!;
 }

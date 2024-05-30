@@ -1,0 +1,73 @@
+<?xml
+    version="1.0"
+    encoding="utf-8"?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="ProximitySlides.App.Pages.TestPage"
+    xmlns:viewModels="clr-namespace:ProximitySlides.App.ViewModels"
+    xmlns:models="clr-namespace:ProximitySlides.App.Models"
+    x:DataType="viewModels:TestViewModel"
+    Title="Настройки">
+
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            EventName="Appearing"
+            Command="{Binding AppearingCommand}" />
+
+        <toolkit:EventToCommandBehavior
+            EventName="Disappearing"
+            Command="{Binding DisappearingCommand}" />
+    </ContentPage.Behaviors>
+
+    <Grid
+        RowDefinitions="50, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, *"
+        ColumnDefinitions=".25*, .50*, .25*">
+
+        <Entry
+            Text="{Binding BroadcastDelayBetweenCirclesMs}"
+            Grid.Row="0"
+            Grid.ColumnSpan="3"
+            Placeholder="Задержка передачи слайдов"
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding BroadcastDelayBetweenPackagesMs}"
+            Grid.Row="1"
+            Grid.ColumnSpan="3"
+            Placeholder="Задержка передачи пакетов"
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding AdvertisingMode}"
+            Grid.Row="2"
+            Grid.ColumnSpan="3"
+            Placeholder="Выберите режим вещания"
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding AdvertisingTx}"
+            Grid.Row="3"
+            Grid.ColumnSpan="3"
+            Placeholder="Выберите мощность вещания"
+            FontSize="22" />
+
+        <Entry
+            Text="{Binding ScanMode}"
+            Grid.Row="4"
+            Grid.ColumnSpan="3"
+            Placeholder="Выберите режим сканирования"
+            FontSize="22" />
+
+        <Button
+            Grid.Row="5"
+            Grid.ColumnSpan="3"
+            Margin="5, 5, 5, 5"
+            Text="Сохранить настройки"
+            Command="{Binding SaveSettingsButtonClickedCommand}" />
+
+    </Grid>
+
+</ContentPage>
